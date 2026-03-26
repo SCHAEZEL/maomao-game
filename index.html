@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>迷宫饭 · 猫国建设者</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+:root {
+  --bg: #f5ede0;
+  --bg2: #ede0cc;
+  --bg3: #e0cdb0;
+  --paper: #f9f3e8;
+  --ink: #4a3728;
+  --ink2: #6b5344;
+  --accent: #c4713b;
+  --accent2: #8b5e34;
+  --green: #5a7a4a;
+  --red: #a84444;
+  --shadow: rgba(74,55,40,0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Serif SC', 'Ma Shan Zheng', serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(196,113,59,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(90,122,74,0.05) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+#header {
+  background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
+  border-bottom: 2px solid var(--bg3);
+  padding: 12px 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+#header h1 {
+  font-size: 1.3rem;
+  color: var(--accent);
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+#happiness-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+
+#happiness-fill {
+  width: 60px;
+  height: 10px;
+  background: var(--bg3);
+  border-radius: 5px;
+  border: 1px solid var(--accent2);
+  overflow: hidden;
+}
+
+#happiness-fill-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #e8a040, #f0c060);
+  border-radius: 5px;
+  transition: width 0.5s ease;
+}
+
+/* ===== RESOURCE BAR ===== */
+#resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--paper);
+  border-bottom: 1px dashed var(--bg3);
+}
+
+.res-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1.5px solid var(--bg3);
+  border-radius: 12px;
+  padding: 6px 12px;
+  min-width: 110px;
+  box-shadow: 2px 2px 4px var(--shadow);
+  transition: transform 0.1s;
+}
+
+.res-card:hover { transform: translateY(-1px); }
+
+.res-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.res-info { display: flex; flex-direction: column; }
+
+.res-name {
+  font-size: 0.65rem;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.res-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.res-rate {
+  font-size: 0.6rem;
+  color: var(--green);
+}
+
+/* ===== TABS ===== */
+#tabs {
+  display: flex;
+  padding: 8px 16px 0;
+  gap: 4px;
+  background: var(--bg);
+}
+
+.tab-btn {
+  padding: 8px 18px;
+  border: none;
+  background: var(--bg2);
+  color: var(--ink2);
+  font-family: inherit;
+  font-size: 0.9rem;
+  border-radius: 12px 12px 0 0;
+  cursor: pointer;
+  border-top: 2px solid transparent;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--paper);
+  color: var(--accent);
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--bg3);
+  border-right: 2px solid var(--bg3);
+  font-weight: 600;
+}
+
+.tab-btn:hover:not(.active) {
+  background: var(--bg3);
+  color: var(--ink);
+}
+
+/* ===== MAIN AREA ===== */
+#main {
+  background: var(--paper);
+  min-height: 400px;
+  padding: 16px;
+  border-top: 1px solid var(--bg3);
+}
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.panel-title {
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--bg3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== BUILDINGS ===== */
+.build-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.build-card {
+  background: var(--bg);
+  border: 2px solid var(--bg3);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 3px 3px 6px var(--shadow);
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.build-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.build-card:hover::before { opacity: 1; }
+.build-card:hover { transform: translateY(-2px); box-shadow: 4px 4px 10px var(--shadow); }
+.build-card.locked { opacity: 0.5; filter: grayscale(0.5); pointer-events: none; }
+
+.build-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.build-icon {
+  font-size: 2rem;
+  line-height: 1;
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 4px;
+  border: 1px solid var(--bg3);
+  text-align: center;
+  min-width: 48px;
+}
+
+.build-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.build-count {
+  font-size: 0.75rem;
+  color: var(--ink2);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 8px;
+  margin-left: auto;
+}
+
+.build-desc {
+  font-size: 0.78rem;
+  color: var(--ink2);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.build-effect {
+  font-size: 0.7rem;
+  color: var(--green);
+  margin-bottom: 10px;
+  background: rgba(90,122,74,0.08);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.build-cost {
+  font-size: 0.72rem;
+  color: var(--ink2);
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cost-tag {
+  background: var(--bg2);
+  border: 1px solid var(--bg3);
+  border-radius: 8px;
+  padding: 2px 7px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cost-tag.insufficient { color: var(--red); border-color: var(--red); background: rgba(168,68,68,0.08); }
+
+.build-btn {
+  width: 100%;
+  padding: 8px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #7a4a22, 2px 3px 4px var(--shadow);
+  transition: all 0.1s;
+}
+
+.build-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #7a4a22;
+}
+
+.build-btn:disabled {
+  background: var(--bg3);
+  box-shadow: none;
+  cursor: not-allowed;
+  color: var(--ink2);
+}
+
+/* ===== TECH ===== */
+.tech-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tech-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--bg3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 2px 2px 5px var(--shadow);
+  transition: all 0.2s;
+}
+
+.tech-item.researched { border-color: var(--green); background: rgba(90,122,74,0.08); }
+.tech-item.available:hover { border-color: var(--accent); }
+.tech-item.locked { opacity: 0.5; }
+
+.tech-icon { font-size: 1.8rem; min-width: 40px; text-align: center; }
+
+.tech-info { flex: 1; }
+
+.tech-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+
+.tech-desc {
+  font-size: 0.72rem;
+  color: var(--ink2);
+  line-height: 1.4;
+}
+
+.tech-status {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tech-status.done { background: var(--green); color: #fff; }
+.tech-status.doing { background: var(--accent); color: #fff; }
+.tech-status.need { background: var(--bg3); color: var(--ink2); }
+
+.tech-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.tech-progress-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ===== CRAFT ===== */
+.craft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.craft-card {
+  background: var(--bg);
+  border: 1.5px solid var(--bg3);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.craft-icon { font-size: 2rem; margin-bottom: 4px; }
+.craft-name { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+.craft-cost { font-size: 0.65rem; color: var(--ink2); margin-bottom: 8px; }
+.craft-btn {
+  padding: 6px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.craft-btn:disabled { background: var(--bg3); color: var(--ink2); cursor: not-allowed; }
+
+/* ===== LOG ===== */
+#log-panel {
+  background: var(--paper);
+  border-top: 1px dashed var(--bg3);
+  padding: 10px 16px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  color: var(--ink2);
+  line-height: 1.6;
+}
+
+.log-entry {
+  padding: 2px 0;
+  border-bottom: 1px dotted var(--bg3);
+  animation: fadeIn 0.3s ease;
+}
+
+.log-time { color: var(--accent2); margin-right: 6px; }
+
+/* ===== OVERLAY ===== */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(74,55,40,0.4);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+
+#modal-overlay.show { display: flex; }
+
+#modal {
+  background: var(--paper);
+  border: 2px solid var(--accent2);
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 6px 6px 20px var(--shadow);
+}
+
+#modal h2 { color: var(--accent); margin-bottom: 12px; font-size: 1.2rem; }
+#modal p { font-size: 0.85rem; color: var(--ink2); margin-bottom: 12px; line-height: 1.5; }
+
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+.mbtn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.mbtn-primary { background: var(--accent); color: #fff; }
+.mbtn-secondary { background: var(--bg3); color: var(--ink); }
+
+/* ===== SAVE MANAGER ===== */
+#save-bar {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 50;
+}
+
+.sbtn {
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1.5px solid var(--bg3);
+  border-radius: 8px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink2);
+  box-shadow: 2px 2px 4px var(--shadow);
+  transition: all 0.2s;
+}
+
+.sbtn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ===== INTRO SCREEN ===== */
+#intro {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  background-image:
+    radial-gradient(ellipse at 50% 40%, rgba(196,113,59,0.1) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+#intro h1 {
+  font-size: 2.2rem;
+  color: var(--accent);
+  text-shadow: 2px 2px 0 rgba(255,255,255,0.5);
+  margin-bottom: 8px;
+}
+
+#intro .subtitle {
+  font-size: 0.9rem;
+  color: var(--ink2);
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+#intro .intro-art {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: float 3s ease-in-out infinite;
+}
+
+#intro .intro-desc {
+  font-size: 0.8rem;
+  color: var(--ink2);
+  max-width: 320px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+#intro .start-btn {
+  padding: 12px 36px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #7a4a22, 3px 4px 6px var(--shadow);
+  letter-spacing: 2px;
+  transition: all 0.1s;
+}
+
+#intro .start-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #7a4a22;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== MISC ===== */
+.spacer { height: 60px; }
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  #header h1 { font-size: 1rem; }
+  .res-card { min-width: 90px; padding: 5px 8px; }
+  .res-icon { font-size: 1.2rem; }
+  .res-val { font-size: 0.85rem; }
+  .build-grid { grid-template-columns: 1fr; }
+  #intro h1 { font-size: 1.6rem; }
+  #intro .intro-art { font-size: 3rem; }
+  #tabs { overflow-x: auto; }
+  .tab-btn { font-size: 0.8rem; padding: 7px 12px; }
+}
+
+/* ===== GLOW ANIMATIONS ===== */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196,113,59,0); }
+  50% { box-shadow: 0 0 12px 3px rgba(196,113,59,0.3); }
+}
+
+.build-card.has-new {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* ===== NOTIFICATION ===== */
+#notif {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 150;
+  pointer-events: none;
+  box-shadow: 2px 2px 8px var(--shadow);
+}
+
+#notif.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== CAT EXPRESSION ===== */
+.cat-face {
+  display: inline-block;
+  transition: transform 0.3s;
+}
+.cat-face.happy { color: #f0c060; }
+.cat-face.sad { color: #a84444; }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div id="intro">
+  <div class="intro-art">🍽️🐱🏰</div>
+  <h1>迷宫饭 · 猫国建设者</h1>
+  <p class="subtitle">~ Dungeon Meshi Style Idle Game ~</p>
+  <p class="intro-desc">
+    在地下城的深处，你经营着一座奇妙的猫咪食堂。<br>
+    从烤蘑菇和树根开始，建设你的地下城市！<br>
+    让猫咪们幸福地工作，解锁美味的秘密……
+  </p>
+  <button class="start-btn" onclick="startGame()">开始冒险 ✦</button>
+</div>
+
+<!-- HEADER -->
+<div id="header" style="display:none">
+  <h1>🍽️ 迷宫猫国</h1>
+  <div id="happiness-bar">
+    <span>😸</span>
+    <span id="happiness-text">幸福: 100%</span>
+    <div id="happiness-fill"><div id="happiness-fill-inner" style="width:100%"></div></div>
+  </div>
+</div>
+
+<!-- RESOURCES -->
+<div id="resources" style="display:none"></div>
+
+<!-- TABS -->
+<div id="tabs" style="display:none">
+  <button class="tab-btn active" onclick="switchTab('buildings')">🏠 建筑</button>
+  <button class="tab-btn" onclick="switchTab('tech')">📜 科技</button>
+  <button class="tab-btn" onclick="switchTab('craft')">🍳 加工</button>
+</div>
+
+<!-- MAIN -->
+<div id="main" style="display:none">
+  <div id="panel-buildings" class="panel active"></div>
+  <div id="panel-tech" class="panel"></div>
+  <div id="panel-craft" class="panel"></div>
+</div>
+
+<!-- LOG -->
+<div id="log-panel" style="display:none"></div>
+
+<!-- NOTIFICATION -->
+<div id="notif"></div>
+
+<!-- SAVE BAR -->
+<div id="save-bar" style="display:none">
+  <button class="sbtn" onclick="exportSave()">💾 导出存档</button>
+  <button class="sbtn" onclick="importSave()">📂 导入</button>
+  <button class="sbtn" onclick="resetGame()">🔄 重置</button>
+</div>
+
+<script>
+// ============ GAME DATA ============
+const ICONS = {
+  grain: '🌾',
+  meat: '🍖',
+  ore: '🪨',
+  fuel: '🔥',
+  cat: '🐱',
+  mushroom: '🍄',
+  crystal: '💎',
+  milk: '🥛'
+};
+
+const RESOURCE_NAMES = {
+  grain: '谷物',
+  meat: '肉',
+  ore: '矿石',
+  fuel: '燃料',
+  cat: '猫咪',
+  mushroom: '烤蘑菇',
+  crystal: '结晶',
+  milk: '羊奶'
+};
+
+// ============ BUILDINGS ============
+const BUILDINGS = [
+  {
+    id: 'farm',
+    name: '田野食堂',
+    icon: '🌾',
+    desc: '种植谷物和香草的大食堂后院',
+    effect: '+0.5 谷物/秒',
+    cost: { grain: 10 },
+    baseCost: { grain: 10 },
+    count: 0,
+    countLimit: 20,
+    produces: { grain: 0.5 },
+    consumes: {},
+    techRequired: null,
+    catCost: 0
+  },
+  {
+    id: 'hunting',
+    name: '狩猎队营地',
+    icon: '🎯',
+    desc: '地下城狩猎队驻扎地，捕捉美味的怪物肉',
+    effect: '+0.3 肉/秒',
+    cost: { grain: 15, meat: 5 },
+    baseCost: { grain: 15, meat: 5 },
+    count: 0,
+    countLimit: 15,
+    produces: { meat: 0.3 },
+    consumes: {},
+    techRequired: 'animal',
+    catCost: 1
+  },
+  {
+    id: 'mine',
+    name: '矿石精炼所',
+    icon: '⛏️',
+    desc: '挖掘并精炼珍贵矿石的地下工坊',
+    effect: '+0.2 矿石/秒',
+    cost: { grain: 20, meat: 10 },
+    baseCost: { grain: 20, meat: 10 },
+    count: 0,
+    countLimit: 12,
+    produces: { ore: 0.2 },
+    consumes: {},
+    techRequired: 'metal',
+    catCost: 1
+  },
+  {
+    id: 'kiln',
+    name: '巨型炊事锅',
+    icon: '🍲',
+    desc: '燃烧燃料产生热能的大型灶台',
+    effect: '+0.4 燃料/秒',
+    cost: { ore: 10, grain: 10 },
+    baseCost: { ore: 10, grain: 10 },
+    count: 0,
+    countLimit: 8,
+    produces: { fuel: 0.4 },
+    consumes: { meat: 0.1 },
+    techRequired: 'energy',
+    catCost: 0
+  },
+  {
+    id: 'nest',
+    name: '温暖猫窝',
+    icon: '🛏️',
+    desc: '给猫咪们休息的舒适小窝，增加猫咪上限',
+    effect: '+2 猫咪上限',
+    cost: { grain: 30, meat: 10 },
+    baseCost: { grain: 30, meat: 10 },
+    count: 0,
+    countLimit: 10,
+    produces: {},
+    consumes: {},
+    techRequired: null,
+    catCost: 0,
+    increasesCatCap: 2
+  },
+  {
+    id: 'mushroom_farm',
+    name: '烤蘑菇窖',
+    icon: '🍄',
+    desc: '培育珍贵烤蘑菇的温暖地窖',
+    effect: '+0.6 烤蘑菇/秒',
+    cost: { ore: 15, fuel: 5 },
+    baseCost: { ore: 15, fuel: 5 },
+    count: 0,
+    countLimit: 10,
+    produces: { mushroom: 0.6 },
+    consumes: { grain: 0.2 },
+    techRequired: 'mushroom',
+    catCost: 1
+  },
+  {
+    id: 'crystal_cave',
+    name: '结晶洞窟',
+    icon: '💎',
+    desc: '生成神秘结晶的魔法洞穴',
+    effect: '+0.15 结晶/秒',
+    cost: { ore: 30, fuel: 15 },
+    baseCost: { ore: 30, fuel: 15 },
+    count: 0,
+    countLimit: 8,
+    produces: { crystal: 0.15 },
+    consumes: { mushroom: 0.3 },
+    techRequired: 'magic',
+    catCost: 2
+  },
+  {
+    id: 'dairy',
+    name: '山羊牧场',
+    icon: '🐐',
+    desc: '饲养提供羊奶的地下山羊群',
+    effect: '+0.4 羊奶/秒',
+    cost: { grain: 25, meat: 15 },
+    baseCost: { grain: 25, meat: 15 },
+    count: 0,
+    countLimit: 8,
+    produces: { milk: 0.4 },
+    consumes: { grain: 0.3 },
+    techRequired: 'animal',
+    catCost: 1
+  }
+];
+
+// ============ TECH ============
+const TECHS = [
+  {
+    id: 'animal',
+    name: '畜牧学',
+    icon: '🐾',
+    desc: '了解动物习性，建立狩猎队和牧场',
+    cost: { grain: 20 },
+    researched: false,
+    unlocks: ['hunting', 'dairy']
+  },
+  {
+    id: 'metal',
+    name: '冶金学',
+    icon: '⚒️',
+    desc: '开采并提炼矿石，掌握金属加工',
+    cost: { grain: 30, meat: 10 },
+    researched: false,
+    unlocks: ['mine']
+  },
+  {
+    id: 'energy',
+    name: '能源学',
+    icon: '🔥',
+    desc: '利用燃料产生能量，驱动地下城设施',
+    cost: { ore: 20, grain: 15 },
+    researched: false,
+    unlocks: ['kiln']
+  },
+  {
+    id: 'mushroom',
+    name: '真菌培育',
+    icon: '🍄',
+    desc: '在地底温暖环境培育食用蘑菇',
+    cost: { ore: 15, meat: 15 },
+    researched: false,
+    unlocks: ['mushroom_farm']
+  },
+  {
+    id: 'magic',
+    name: '魔法学',
+    icon: '✨',
+    desc: '解锁结晶矿脉的奥秘，进入魔法时代',
+    cost: { ore: 40, mushroom: 20, fuel: 10 },
+    researched: false,
+    unlocks: ['crystal_cave']
+  }
+];
+
+// ============ CRAFT RECIPES ============
+const CRAFTS = [
+  { id: 'catfood', name: '猫咪便当', icon: '🍱', cost: { grain: 5, meat: 3 }, result: 'happiness', amount: 10 },
+  { id: 'campfire', name: '营火食材', icon: '🔥', cost: { grain: 10, mushroom: 5 }, result: 'happiness', amount: 15 },
+  { id: 'minerals', name: '精炼矿石', icon: '⚙️', cost: { ore: 10 }, result: 'ore', amount: 5, converts: true },
+];
+
+// ============ GAME STATE ============
+let G = {
+  resources: {
+    grain: 20,
+    meat: 5,
+    ore: 0,
+    fuel: 0,
+    cat: 2,
+    catCap: 5,
+    mushroom: 0,
+    crystal: 0,
+    milk: 0,
+    happiness: 80,
+    maxHappiness: 100
+  },
+  buildings: BUILDINGS.map(b => ({ id: b.id, count: 0 })),
+  techs: TECHS.map(t => ({ id: t.id, researched: false, progress: 0 })),
+  ticks: 0,
+  day: 1,
+  log: []
+};
+
+// ============ UTILS ============
+function getRes(r) { return G.resources[r] || 0; }
+function setRes(r, v) { G.resources[r] = Math.max(0, v); }
+function addRes(r, v) { G.resources[r] = (G.resources[r] || 0) + v; }
+
+function getBuilding(id) {
+  return BUILDINGS.find(b => b.id === id);
+}
+
+function getBState(id) {
+  return G.buildings.find(b => b.id === id);
+}
+
+function getTech(id) {
+  return TECHS.find(t => t.id === id);
+}
+
+function getTState(id) {
+  return G.techs.find(t => t.id === id);
+}
+
+function isUnlocked(thing) {
+  const b = getBuilding(thing);
+  if (!b) return true;
+  if (!b.techRequired) return true;
+  return getTState(b.techRequired)?.researched;
+}
+
+function canAfford(cost) {
+  for (const [r, amt] of Object.entries(cost)) {
+    if (getRes(r) < amt) return false;
+  }
+  return true;
+}
+
+function spend(cost) {
+  for (const [r, amt] of Object.entries(cost)) {
+    setRes(r, getRes(r) - amt);
+  }
+}
+
+function fmt(n) {
+  n = Math.floor(n * 100) / 100;
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toFixed(n % 1 === 0 ? 0 : 1);
+}
+
+function fmtRate(r) {
+  if (r === 0) return '';
+  const s = r > 0 ? '+' : '';
+  return `(${s}${fmt(r)}/s)`;
+}
+
+function addLog(msg) {
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  G.log.unshift({ time, msg });
+  if (G.log.length > 50) G.log.pop();
+  renderLog();
+}
+
+function showNotif(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ============ HAPINESS ============
+function updateHappiness() {
+  const catRatio = G.resources.cat / Math.max(1, G.resources.catCap);
+  const foodProd = calcFoodProduction();
+  const foodCons = calcFoodConsumption();
+  let h = 50;
+  h += catRatio * 30;
+  h += (foodProd >= foodCons ? 20 : -20);
+  h = Math.max(0, Math.min(100, h));
+  G.resources.happiness = h;
+  G.resources.maxHappiness = 100;
+}
+
+function calcFoodProduction() {
+  let p = 0;
+  for (const b of BUILDINGS) {
+    const count = getBState(b.id)?.count || 0;
+    if (b.produces?.grain) p += b.produces.grain * count;
+    if (b.produces?.meat) p += b.produces.meat * count;
+    if (b.produces?.mushroom) p += b.produces.mushroom * count;
+    if (b.produces?.milk) p += b.produces.milk * count;
+  }
+  return p;
+}
+
+function calcFoodConsumption() {
+  let c = 0;
+  const cats = G.resources.cat;
+  c += cats * 0.05;
+  for (const b of BUILDINGS) {
+    const count = getBState(b.id)?.count || 0;
+    if (b.consumes?.grain) c += b.consumes.grain * count;
+    if (b.consumes?.meat) c += b.consumes.meat * count;
+    if (b.consumes?.mushroom) c += b.consumes.mushroom * count;
+  }
+  return c;
+}
+
+function happinessMultiplier() {
+  return 0.5 + (G.resources.happiness / 100) * 1.0;
+}
+
+// ============ PRODUCTION ============
+function doTick() {
+  G.ticks++;
+  if (G.ticks % 10 === 0) G.day++;
+
+  const hm = happinessMultiplier();
+
+  // Production
+  for (const b of BUILDINGS) {
+    const count = getBState(b.id)?.count || 0;
+    if (count === 0) continue;
+    if (!isUnlocked(b.id)) continue;
+
+    // Consume
+    for (const [r, amt] of Object.entries(b.consumes || {})) {
+      const needed = amt * count;
+      if (getRes(r) >= needed) {
+        setRes(r, getRes(r) - needed);
+      } else {
+        // Partial consume, partial produce
+        const ratio = getRes(r) / needed;
+        for (const [r2, a2] of Object.entries(b.consumes)) {
+          setRes(r2, getRes(r2) - a2 * count * ratio);
+        }
+        for (const [r2, a2] of Object.entries(b.produces)) {
+          addRes(r2, a2 * count * ratio * hm);
+        }
+        continue;
+      }
+    }
+
+    // Produce
+    for (const [r, amt] of Object.entries(b.produces)) {
+      addRes(r, amt * count * hm);
+    }
+  }
+
+  // Cat food consumption (passive)
+  const catFood = G.resources.cat * 0.05;
+  setRes('grain', getRes('grain') - catFood);
+  if (getRes('grain') < 0) {
+    setRes('grain', 0);
+    setRes('meat', Math.max(0, getRes('meat') - G.resources.cat * 0.02));
+  }
+
+  // Auto-cat growth
+  if (G.resources.cat < G.resources.catCap) {
+    const netFood = calcFoodProduction() - calcFoodConsumption();
+    if (netFood > 0.5 && G.ticks % 60 === 0) {
+      addRes('cat', 1);
+      addLog('🐱 一只新猫咪加入了你的队伍！');
+    }
+  }
+
+  // Tech research
+  for (const t of TECHS) {
+    const ts = getTState(t.id);
+    if (ts?.researched) continue;
+    // Tech auto-researches when you have enough cats
+    const catsWorking = Math.floor(G.resources.cat * 0.5);
+    if (catsWorking > 0 && canAfford(t.cost)) {
+      // Slowly drain cost while researching
+      if (G.ticks % 30 === 0) {
+        spend(t.cost);
+        addLog(`📜 正在研究「${t.name}」…`);
+      }
+      if (G.ticks % 120 === 0) {
+        ts.researched = true;
+        addLog(`✨ 解锁科技：「${t.name}」！`);
+        showNotif(`✨ 解锁 ${t.name}`);
+      }
+    }
+  }
+
+  updateHappiness();
+  renderResources();
+  renderBuildings();
+  renderTech();
+  renderHappiness();
+}
+
+// ============ BUILD ============
+function buyBuilding(id) {
+  const b = getBuilding(id);
+  const bs = getBState(id);
+  if (!b || !bs) return;
+  if (bs.count >= b.countLimit) return;
+  if (!isUnlocked(id)) return;
+
+  const cost = getBuildingCost(b, bs.count);
+  if (!canAfford(cost)) return;
+
+  spend(cost);
+  bs.count++;
+  addRes('cat', b.catCost);
+  addRes('catCap', b.increasesCatCap || 0);
+
+  addLog(`🏠 建造了「${b.name}」×1`);
+  showNotif(`建造: ${b.name}`);
+  renderBuildings();
+  renderResources();
+}
+
+// Cost scales with count
+function getBuildingCost(b, count) {
+  const cost = {};
+  for (const [r, amt] of Object.entries(b.baseCost)) {
+    cost[r] = Math.ceil(amt * Math.pow(1.15, count));
+  }
+  return cost;
+}
+
+// ============ CRAFT ============
+function doCraft(id) {
+  const c = CRAFTS.find(x => x.id === id);
+  if (!c) return;
+  if (!canAfford(c.cost)) return;
+  spend(c.cost);
+
+  if (c.result === 'happiness') {
+    G.resources.happiness = Math.min(100, G.resources.happiness + c.amount);
+    addLog(`🍳 制作了「${c.name}」，猫咪们很开心！`);
+  } else if (c.converts) {
+    addRes(c.result, c.amount);
+    addLog(`⚒️ 加工了「${c.name}」`);
+  }
+  renderResources();
+  renderCraft();
+}
+
+// ============ TECH RESEARCH ============
+function startTechResearch(id) {
+  const t = getTech(id);
+  const ts = getTState(id);
+  if (!t || !ts || ts.researched) return;
+  if (!canAfford(t.cost)) return;
+
+  spend(t.cost);
+  ts.researched = true;
+  addLog(`✨ 科技研究完成：「${t.name}」！`);
+  showNotif(`解锁: ${t.name}`);
+  renderTech();
+  renderBuildings();
+}
+
+// ============ RENDER ============
+function renderResources() {
+  const el = document.getElementById('resources');
+  const hm = happinessMultiplier();
+
+  const entries = [
+    { key: 'grain', label: '谷物', rate: calcFoodProduction() - calcFoodConsumption() - G.resources.cat * 0.05 },
+    { key: 'meat', label: '肉', rate: BUILDINGS.filter(b => b.id === 'hunting').reduce((s, b) => s + (b.produces?.meat || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.meat || 0) * (getBState(b.id)?.count || 0), 0) },
+    { key: 'ore', label: '矿石', rate: BUILDINGS.filter(b => b.id === 'mine').reduce((s, b) => s + (b.produces?.ore || 0) * (getBState(b.id)?.count || 0) * hm, 0) },
+    { key: 'fuel', label: '燃料', rate: BUILDINGS.filter(b => b.id === 'kiln').reduce((s, b) => s + (b.produces?.fuel || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.fuel || 0) * (getBState(b.id)?.count || 0), 0) },
+    { key: 'cat', label: `猫咪`, rate: 0 },
+    { key: 'mushroom', label: '烤蘑菇', rate: BUILDINGS.filter(b => b.id === 'mushroom_farm').reduce((s, b) => s + (b.produces?.mushroom || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.mushroom || 0) * (getBState(b.id)?.count || 0), 0) },
+    { key: 'crystal', label: '结晶', rate: BUILDINGS.filter(b => b.id === 'crystal_cave').reduce((s, b) => s + (b.produces?.crystal || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.crystal || 0) * (getBState(b.id)?.count || 0), 0) },
+    { key: 'milk', label: '羊奶', rate: BUILDINGS.filter(b => b.id === 'dairy').reduce((s, b) => s + (b.produces?.milk || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.milk || 0) * (getBState(b.id)?.count || 0), 0) },
+  ];
+
+  el.innerHTML = entries.map(e => {
+    const r = getRes(e.key);
+    const rateStr = e.rate !== 0 ? fmtRate(e.rate) : '';
+    const rateClass = e.rate > 0 ? 'res-rate' : e.rate < 0 ? 'res-rate' : '';
+    const catCap = e.key === 'cat' ? ` / ${G.resources.catCap}` : '';
+    const valStr = e.key === 'cat' ? `${fmt(r)}${catCap}` : fmt(r);
+    return `<div class="res-card">
+      <span class="res-icon">${ICONS[e.key] || '?'}</span>
+      <div class="res-info">
+        <span class="res-name">${e.label}</span>
+        <span class="res-val">${valStr}</span>
+        ${rateStr ? `<span class="${rateClass}" style="color:${e.rate<0?'var(--red)':'var(--green)'}">${rateStr}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHappiness() {
+  const h = G.resources.happiness;
+  document.getElementById('happiness-text').textContent = `幸福: ${h}%`;
+  document.getElementById('happiness-fill-inner').style.width = h + '%';
+}
+
+function renderBuildings() {
+  const el = document.getElementById('panel-buildings');
+  el.innerHTML = `<div class="panel-title">🏠 建筑</div><div class="build-grid">` +
+    BUILDINGS.map(b => {
+      const bs = getBState(b.id);
+      const count = bs?.count || 0;
+      const unlocked = isUnlocked(b.id);
+      const cost = getBuildingCost(b, count);
+      const affordable = canAfford(cost);
+      const locked = !unlocked;
+      const lockedHint = locked ? `需要先研究「${getTech(b.techRequired)?.name}」` : '';
+
+      const costHtml = Object.entries(cost).map(([r, amt]) => {
+        const has = getRes(r) >= amt;
+        return `<span class="cost-tag ${has ? '' : 'insufficient'}">${ICONS[r]} ${fmt(amt)}</span>`;
+      }).join('');
+
+      return `<div class="build-card ${locked ? 'locked' : ''}" ${locked ? `title="${lockedHint}"` : ''}>
+        <div class="build-header">
+          <div class="build-icon">${b.icon}</div>
+          <div class="build-name">${b.name}</div>
+          <div class="build-count">×${count}${b.countLimit ? '/' + b.countLimit : ''}</div>
+        </div>
+        <div class="build-desc">${b.desc}</div>
+        <div class="build-effect">${b.effect}</div>
+        <div class="build-cost">${costHtml}</div>
+        <button class="build-btn" onclick="buyBuilding('${b.id}')" ${(!affordable || locked) ? 'disabled' : ''}>
+          ${locked ? '🔒 ' + lockedHint : count >= b.countLimit ? '已达上限' : '建造'}
+        </button>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function renderTech() {
+  const el = document.getElementById('panel-tech');
+  el.innerHTML = `<div class="panel-title">📜 科技</div><div class="tech-list">` +
+    TECHS.map(t => {
+      const ts = getTState(t.id);
+      const researched = ts?.researched;
+      const affordable = canAfford(t.cost);
+      const status = researched ? 'done' : affordable ? 'doing' : 'need';
+      const statusText = researched ? '已研究' : affordable ? '可研究' : '需求不足';
+
+      const costHtml = Object.entries(t.cost).map(([r, amt]) => {
+        const has = getRes(r) >= amt;
+        return `<span class="cost-tag ${has ? '' : 'insufficient'}">${ICONS[r]} ${fmt(amt)}</span>`;
+      }).join('');
+
+      return `<div class="tech-item ${researched ? 'researched' : affordable ? 'available' : 'locked'}">
+        <div class="tech-icon">${t.icon}</div>
+        <div class="tech-info">
+          <div class="tech-name">${t.name}</div>
+          <div class="tech-desc">${t.desc}</div>
+          <div style="margin-top:4px;font-size:0.68rem;color:var(--ink2)">解锁: ${t.unlocks.map(u => getBuilding(u)?.name || u).join('、')}</div>
+          <div class="build-cost" style="margin-top:4px">${costHtml}</div>
+        </div>
+        <div>
+          <span class="tech-status ${status}">${statusText}</span>
+          ${!researched && affordable ? `<br><button style="margin-top:6px;padding:4px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:0.7rem;cursor:pointer" onclick="startTechResearch('${t.id}')">研究</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function renderCraft() {
+  const el = document.getElementById('panel-craft');
+  el.innerHTML = `<div class="panel-title">🍳 加工台</div><div class="craft-grid">` +
+    CRAFTS.map(c => {
+      const affordable = canAfford(c.cost);
+      const costHtml = Object.entries(c.cost).map(([r, amt]) => {
+        const has = getRes(r) >= amt;
+        return `<span class="cost-tag ${has ? '' : 'insufficient'}">${ICONS[r]} ${fmt(amt)}</span>`;
+      }).join('');
+
+      let effectText = '';
+      if (c.result === 'happiness') effectText = `+${c.amount} 幸福度`;
+      if (c.converts) effectText = `→ ${ICONS[c.result]} +${c.amount}`;
+
+      return `<div class="craft-card">
+        <div class="craft-icon">${c.icon}</div>
+        <div class="craft-name">${c.name}</div>
+        <div class="craft-desc" style="font-size:0.7rem;color:var(--ink2);margin-bottom:6px">${effectText}</div>
+        <div class="craft-cost">${costHtml}</div>
+        <button class="craft-btn" onclick="doCraft('${c.id}')" ${affordable ? '' : 'disabled'}>制作</button>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function renderLog() {
+  const el = document.getElementById('log-panel');
+  el.innerHTML = G.log.map(l => `<div class="log-entry"><span class="log-time">[${l.time}]</span>${l.msg}</div>`).join('');
+}
+
+// ============ TABS ============
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.includes(name === 'buildings' ? '建筑' : name === 'tech' ? '科技' : '加工')) {
+      b.classList.add('active');
+    }
+  });
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ============ SAVE / LOAD ============
+function saveGame() {
+  const data = {
+    resources: G.resources,
+    buildings: G.buildings,
+    techs: G.techs,
+    ticks: G.ticks,
+    day: G.day,
+    log: G.log.slice(0, 20)
+  };
+  localStorage.setItem('maomao_save', JSON.stringify(data));
+}
+
+function loadGame() {
+  const raw = localStorage.getItem('maomao_save');
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    G.resources = { ...G.resources, ...data.resources };
+    G.buildings = data.buildings || G.buildings;
+    G.techs = data.techs || G.techs;
+    G.ticks = data.ticks || 0;
+    G.day = data.day || 1;
+    G.log = data.log || [];
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function exportSave() {
+  const data = {
+    resources: G.resources,
+    buildings: G.buildings,
+    techs: G.techs,
+    ticks: G.ticks,
+    day: G.day,
+    log: G.log.slice(0, 20)
+  };
+  const str = btoa(encodeURIComponent(JSON.stringify(data)));
+  const blob = new Blob([str], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `maomao-save-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showNotif('存档已导出！');
+}
+
+function importSave() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.txt,.json';
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const str = decodeURIComponent(atob(reader.result));
+        const data = JSON.parse(str);
+        G.resources = { ...G.resources, ...data.resources };
+        G.buildings = data.buildings || G.buildings;
+        G.techs = data.techs || G.techs;
+        G.ticks = data.ticks || 0;
+        G.day = data.day || 1;
+        G.log = data.log || [];
+        renderAll();
+        saveGame();
+        showNotif('存档已导入！');
+      } catch (e) {
+        showNotif('存档格式错误！');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function resetGame() {
+  if (!confirm('确定要重置游戏吗？所有进度将丢失！')) return;
+  localStorage.removeItem('maomao_save');
+  location.reload();
+}
+
+// ============ RENDER ALL ============
+function renderAll() {
+  renderResources();
+  renderHappiness();
+  renderBuildings();
+  renderTech();
+  renderCraft();
+  renderLog();
+}
+
+// ============ GAME START ============
+function startGame() {
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('header').style.display = 'flex';
+  document.getElementById('resources').style.display = 'flex';
+  document.getElementById('tabs').style.display = 'flex';
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('log-panel').style.display = 'block';
+  document.getElementById('save-bar').style.display = 'flex';
+
+  const loaded = loadGame();
+  if (loaded) {
+    addLog('🐱 欢迎回来！存档已加载。');
+    showNotif('存档已加载');
+  } else {
+    addLog('🍽️ 迷宫猫国开业了！祝你好运！');
+  }
+
+  renderAll();
+
+  // Game loop
+  setInterval(doTick, 1000);
+
+  // Auto-save
+  setInterval(saveGame, 30000);
+
+  // Render craft panel
+  renderCraft();
+}
+
+// Manual gather
+function gather(type) {
+  const amounts = { grain: 2, meat: 1, ore: 1, mushroom: 1 };
+  if (amounts[type]) {
+    addRes(type, amounts[type]);
+    renderResources();
+  }
+}
+
+// ============ INIT ============
+// Show gather buttons on resources
+const OG_renderResources = renderResources;
+// Override to add gather buttons
+</script>
+</body>
+</html>
