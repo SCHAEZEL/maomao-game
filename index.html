@@ -765,9 +765,10 @@ body {
 
 <!-- SAVE BAR -->
 <div id="save-bar" style="display:none">
-  <button class="sbtn" onclick="exportSave()">💾 导出存档</button>
-  <button class="sbtn" onclick="importSave()">📂 导入</button>
-  <button class="sbtn" onclick="resetGame()">🔄 重置</button>
+  <span id="version-tag" style="position:absolute;right:155px;top:50%;transform:translateY(-50%);font-size:0.6rem;color:var(--ink2);opacity:0.4;pointer-events:none;white-space:nowrap">v1.1</span>
+  <button class="sbtn" onclick="exportSave()">💾</button>
+  <button class="sbtn" onclick="importSave()">📂</button>
+  <button class="sbtn" onclick="resetGame()">🔄</button>
 </div>
 
 <script>
