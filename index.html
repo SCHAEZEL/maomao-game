@@ -1334,7 +1334,7 @@ function renderResources() {
     const rateClass = e.rate > 0 ? 'res-rate' : e.rate < 0 ? 'res-rate' : '';
     const catCap = e.key === 'cat' ? ` / ${G.resources.catCap}` : '';
     const valStr = e.key === 'cat' ? `${fmt(r)}${catCap}` : fmt(r);
-    const gatherable = ['grain', 'meat', 'ore', 'mushroom'].includes(e.key);
+    const gatherable = e.key === 'grain';
     const gatherAmount = e.key === 'grain' ? 1 : 1;
     return `<div class="res-card ${gatherable ? 'can-gather' : ''}" onclick="${gatherable ? `gather('${e.key}')` : ''}" style="position:relative">
       ${gatherable ? `<button class="gather-btn" onclick="event.stopPropagation();gather('${e.key}')">+${gatherAmount}</button>` : ''}
