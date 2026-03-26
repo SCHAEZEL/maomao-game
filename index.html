@@ -860,7 +860,7 @@ function catLevelBonus(level) {
 // 游戏所有内容数据从此对象读取，代码逻辑不包含任何硬编码的游戏数据
 const CONFIG = {
   meta: {
-    version: "1.1",
+    version: "1.2",
     gameName: "迷宫饭·猫国建设者"
   },
 
@@ -1910,6 +1910,9 @@ function startGame() {
     for (let i = 0; i < CONFIG.startState.cats; i++) {
       G.cats.push(generateCat('common'));
     }
+    // 开局免费赠送一个田野食堂，保证谷物供给
+    const farmState = G.buildings.find(b => b.id === 'farm');
+    if (farmState) farmState.count = 1;
     addLog('🍽️ 迷宫猫国开业了！祝你好运！');
   }
 
