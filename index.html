@@ -772,28 +772,60 @@ body {
 </div>
 
 <script>
-// ============ GAME DATA ============
-const ICONS = {
-  grain: '🌾',
-  meat: '🍖',
-  ore: '🪨',
-  fuel: '🔥',
-  cat: '🐱',
-  mushroom: '🍄',
-  crystal: '💎',
-  milk: '🥛'
+// ============ GAME CONFIG ============
+// 游戏所有内容数据从此对象读取，代码逻辑不包含任何硬编码的游戏数据
+const CONFIG = {
+  meta: {
+    version: "1.1",
+    gameName: "迷宫饭·猫国建设者"
+  },
+
+  startState: {
+    cats: 2,
+    catCap: 5,
+    happiness: 80,
+    resources: {
+      grain: 20,
+      meat: 5,
+      ore: 0,
+      fuel: 0,
+      mushroom: 0,
+      crystal: 0,
+      milk: 0
+    }
+  },
+
+  resources: [
+    { id: "grain",    name: "谷物",    icon: "🌾", manualGather: true,  gatherAmount: 2, initialAmount: 20 },
+    { id: "meat",     name: "肉",      icon: "🍖", manualGather: false, gatherAmount: 0, initialAmount: 5  },
+    { id: "ore",      name: "矿石",    icon: "🪨", manualGather: false, gatherAmount: 0, initialAmount: 0  },
+    { id: "fuel",     name: "燃料",    icon: "🔥", manualGather: false, gatherAmount: 0, initialAmount: 0  },
+    { id: "mushroom", name: "烤蘑菇",  icon: "🍄", manualGather: false, gatherAmount: 0, initialAmount: 0  },
+    { id: "crystal",  name: "结晶",    icon: "💎", manualGather: false, gatherAmount: 0, initialAmount: 0  },
+    { id: "milk",     name: "羊奶",    icon: "🥛", manualGather: false, gatherAmount: 0, initialAmount: 0  },
+  ],
 };
 
-const RESOURCE_NAMES = {
-  grain: '谷物',
-  meat: '肉',
-  ore: '矿石',
-  fuel: '燃料',
-  cat: '猫咪',
-  mushroom: '烤蘑菇',
-  crystal: '结晶',
-  milk: '羊奶'
-};
+// ============ CONFIG HELPERS ============
+function getResource(id) { return CONFIG.resources.find(r => r.id === id); }
+
+// ============ GAME DATA ============
+// 从 CONFIG.resources 构建 ICONS 和 RESOURCE_NAMES
+const ICONS = {};
+const RESOURCE_NAMES = {};
+for (const r of CONFIG.resources) {
+  ICONS[r.id] = r.icon;
+  RESOURCE_NAMES[r.id] = r.name;
+}
+// 猫咪不在 CONFIG.resources 中，单独添加
+ICONS['cat'] = '🐱';
+RESOURCE_NAMES['cat'] = '猫咪';
+
+// gatherAmounts 从 CONFIG 读取
+const gatherAmounts = {};
+for (const r of CONFIG.resources) {
+  gatherAmounts[r.id] = r.gatherAmount;
+}
 
 // ============ BUILDINGS ============
 const BUILDINGS = [
@@ -1029,16 +1061,16 @@ function highlightBuilding(buildingId) {
 // ============ GAME STATE ============
 let G = {
   resources: {
-    grain: 20,
-    meat: 5,
-    ore: 0,
-    fuel: 0,
-    cat: 2,
-    catCap: 5,
-    mushroom: 0,
-    crystal: 0,
-    milk: 0,
-    happiness: 80,
+    grain: CONFIG.startState.resources.grain,
+    meat: CONFIG.startState.resources.meat,
+    ore: CONFIG.startState.resources.ore,
+    fuel: CONFIG.startState.resources.fuel,
+    cat: CONFIG.startState.cats,
+    catCap: CONFIG.startState.catCap,
+    mushroom: CONFIG.startState.resources.mushroom,
+    crystal: CONFIG.startState.resources.crystal,
+    milk: CONFIG.startState.resources.milk,
+    happiness: CONFIG.startState.happiness,
     maxHappiness: 100
   },
   buildings: BUILDINGS.map(b => ({ id: b.id, count: 0 })),
@@ -1334,8 +1366,9 @@ function renderResources() {
     const rateClass = e.rate > 0 ? 'res-rate' : e.rate < 0 ? 'res-rate' : '';
     const catCap = e.key === 'cat' ? ` / ${G.resources.catCap}` : '';
     const valStr = e.key === 'cat' ? `${fmt(r)}${catCap}` : fmt(r);
-    const gatherable = e.key === 'grain';
-    const gatherAmount = e.key === 'grain' ? 1 : 1;
+    const res = getResource(e.key);
+    const gatherable = res ? res.manualGather : false;
+    const gatherAmount = gatherAmounts[e.key] || 0;
     return `<div class="res-card ${gatherable ? 'can-gather' : ''}" onclick="${gatherable ? `gather('${e.key}')` : ''}" style="position:relative">
       ${gatherable ? `<button class="gather-btn" onclick="event.stopPropagation();gather('${e.key}')">+${gatherAmount}</button>` : ''}
       <span class="res-icon">${ICONS[e.key] || '?'}</span>
@@ -1565,6 +1598,8 @@ function startGame() {
   document.getElementById('log-panel').style.display = 'block';
   document.getElementById('save-bar').style.display = 'flex';
 
+  document.getElementById('version-tag').textContent = 'v' + CONFIG.meta.version;
+
   const loaded = loadGame();
   if (loaded) {
     addLog('🐱 欢迎回来！存档已加载。');
@@ -1587,10 +1622,10 @@ function startGame() {
 
 // Manual gather
 function gather(type) {
-  const amounts = { grain: 2, meat: 1, ore: 1, mushroom: 1 };
-  if (amounts[type]) {
-    addRes(type, amounts[type]);
-    showNotif(`+${amounts[type]} ${ICONS[type]} ${RESOURCE_NAMES[type]}`);
+  const amount = gatherAmounts[type] || 0;
+  if (amount > 0) {
+    addRes(type, amount);
+    showNotif(`+${amount} ${ICONS[type]} ${RESOURCE_NAMES[type]}`);
     renderResources();
   }
 }
