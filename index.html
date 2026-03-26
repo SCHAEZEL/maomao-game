@@ -761,12 +761,12 @@ const BUILDINGS = [
     name: '狩猎队营地',
     icon: '🎯',
     desc: '地下城狩猎队驻扎地，捕捉美味的怪物肉',
-    effect: '+0.3 肉/秒',
-    cost: { grain: 15, meat: 5 },
-    baseCost: { grain: 15, meat: 5 },
+    effect: '+0.4 肉/秒',
+    cost: { grain: 15 },
+    baseCost: { grain: 15 },
     count: 0,
     countLimit: 15,
-    produces: { meat: 0.3 },
+    produces: { meat: 0.4 },
     consumes: {},
     techRequired: 'animal',
     catCost: 1
@@ -1098,6 +1098,10 @@ function doTick() {
     setRes('grain', 0);
     setRes('meat', Math.max(0, getRes('meat') - G.resources.cat * 0.02));
   }
+
+  // Cats passively gather meat from the dungeon
+  const passiveMeat = G.resources.cat * 0.05 * hm;
+  addRes('meat', passiveMeat);
 
   // Auto-cat growth
   if (G.resources.cat < G.resources.catCap) {
