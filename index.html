@@ -107,6 +107,58 @@ body {
 }
 
 .res-card:hover { transform: translateY(-1px); }
+.res-card.can-gather { cursor: pointer; }
+.res-card.can-gather:hover { border-color: var(--accent); }
+.gather-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.res-card:hover .gather-btn { opacity: 1; pointer-events: auto; }
+
+/* Guide highlight on buildings */
+@keyframes guide-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196,113,59,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(196,113,59,0); }
+}
+.build-card.guide-highlight {
+  animation: guide-pulse 1s ease-in-out 3;
+  border-color: var(--accent) !important;
+}
+
+/* Guide notification */
+#guide-tip {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  max-width: 320px;
+  text-align: center;
+  z-index: 160;
+  opacity: 0;
+  transition: opacity 0.3s;
+  box-shadow: 3px 3px 10px var(--shadow);
+  line-height: 1.5;
+}
+#guide-tip.show { opacity: 1; }
+#guide-tip .guide-resource { color: #f0c060; font-weight: 700; }
+#guide-tip .guide-building { color: #7ec87e; font-weight: 700; }
 
 .res-icon {
   font-size: 1.5rem;
@@ -708,6 +760,9 @@ body {
 <!-- NOTIFICATION -->
 <div id="notif"></div>
 
+<!-- RESOURCE GUIDE TIP -->
+<div id="guide-tip"></div>
+
 <!-- SAVE BAR -->
 <div id="save-bar" style="display:none">
   <button class="sbtn" onclick="exportSave()">💾 导出存档</button>
@@ -919,6 +974,56 @@ const CRAFTS = [
   { id: 'campfire', name: '营火食材', icon: '🔥', cost: { grain: 10, mushroom: 5 }, result: 'happiness', amount: 15 },
   { id: 'minerals', name: '精炼矿石', icon: '⚙️', cost: { ore: 10 }, result: 'ore', amount: 5, converts: true },
 ];
+
+// ============ RESOURCE GUIDE ============
+// Maps each resource to the building that produces it
+const RESOURCE_GUIDE = {
+  grain:    { building: 'farm',        tip: '猫咪会帮你种谷物，建造田野食堂自动产粮' },
+  meat:     { building: null,           tip: '猫咪会自己去地下城狩猎，被动获得肉' },
+  ore:      { building: 'mine',        tip: '建造矿石精炼所挖掘矿石，需要先研究冶金学' },
+  fuel:     { building: 'kiln',        tip: '建造巨型炊事锅燃烧燃料，需要先研究能源学' },
+  mushroom: { building: 'mushroom_farm', tip: '建造烤蘑菇窖培育蘑菇，需要先研究真菌培育' },
+  crystal:  { building: 'crystal_cave', tip: '建造结晶洞窟生成结晶，需要先研究魔法学' },
+  milk:     { building: 'dairy',       tip: '建造山羊牧场获取羊奶，需要先研究畜牧学' },
+};
+
+function showResourceGuide(cost) {
+  // Find the first resource we don't have enough of
+  for (const [r, needed] of Object.entries(cost)) {
+    if (getRes(r) < needed) {
+      const guide = RESOURCE_GUIDE[r];
+      let tip = guide ? guide.tip : `${RESOURCE_NAMES[r] || r}不足`;
+      if (r === 'meat') tip = '猫咪会自动狩猎，每秒获得少量肉';
+
+      // Show guide tip
+      const tipEl = document.getElementById('guide-tip');
+      tipEl.innerHTML = `<span class="guide-resource">${ICONS[r]} 缺${RESOURCE_NAMES[r] || r}</span><br>${tip}`;
+      tipEl.classList.add('show');
+      setTimeout(() => tipEl.classList.remove('show'), 4000);
+
+      // Highlight the building
+      if (guide && guide.building) {
+        highlightBuilding(guide.building);
+        // Switch to buildings tab
+        switchTab('buildings');
+      }
+      break;
+    }
+  }
+}
+
+function highlightBuilding(buildingId) {
+  // Remove existing highlights
+  document.querySelectorAll('.build-card').forEach(el => el.classList.remove('guide-highlight'));
+  // Add highlight to target building card
+  const cards = document.querySelectorAll('.build-card');
+  cards.forEach(card => {
+    if (card.dataset.buildingId === buildingId) {
+      card.classList.add('guide-highlight');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+}
 
 // ============ GAME STATE ============
 let G = {
@@ -1148,7 +1253,10 @@ function buyBuilding(id) {
   if (!isUnlocked(id)) return;
 
   const cost = getBuildingCost(b, bs.count);
-  if (!canAfford(cost)) return;
+  if (!canAfford(cost)) {
+    showResourceGuide(cost);
+    return;
+  }
 
   spend(cost);
   bs.count++;
@@ -1225,7 +1333,10 @@ function renderResources() {
     const rateClass = e.rate > 0 ? 'res-rate' : e.rate < 0 ? 'res-rate' : '';
     const catCap = e.key === 'cat' ? ` / ${G.resources.catCap}` : '';
     const valStr = e.key === 'cat' ? `${fmt(r)}${catCap}` : fmt(r);
-    return `<div class="res-card">
+    const gatherable = ['grain', 'meat', 'ore', 'mushroom'].includes(e.key);
+    const gatherAmount = e.key === 'grain' ? 1 : 1;
+    return `<div class="res-card ${gatherable ? 'can-gather' : ''}" onclick="${gatherable ? `gather('${e.key}')` : ''}" style="position:relative">
+      ${gatherable ? `<button class="gather-btn" onclick="event.stopPropagation();gather('${e.key}')">+${gatherAmount}</button>` : ''}
       <span class="res-icon">${ICONS[e.key] || '?'}</span>
       <div class="res-info">
         <span class="res-name">${e.label}</span>
@@ -1259,7 +1370,7 @@ function renderBuildings() {
         return `<span class="cost-tag ${has ? '' : 'insufficient'}">${ICONS[r]} ${fmt(amt)}</span>`;
       }).join('');
 
-      return `<div class="build-card ${locked ? 'locked' : ''}" ${locked ? `title="${lockedHint}"` : ''}>
+      return `<div class="build-card ${locked ? 'locked' : ''}" data-building-id="${b.id}" ${locked ? `title="${lockedHint}"` : ''}>
         <div class="build-header">
           <div class="build-icon">${b.icon}</div>
           <div class="build-name">${b.name}</div>
@@ -1478,6 +1589,7 @@ function gather(type) {
   const amounts = { grain: 2, meat: 1, ore: 1, mushroom: 1 };
   if (amounts[type]) {
     addRes(type, amounts[type]);
+    showNotif(`+${amounts[type]} ${ICONS[type]} ${RESOURCE_NAMES[type]}`);
     renderResources();
   }
 }
