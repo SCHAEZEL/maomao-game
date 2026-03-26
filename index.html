@@ -745,6 +745,7 @@ body {
   <button class="tab-btn active" onclick="switchTab('buildings')">🏠 建筑</button>
   <button class="tab-btn" onclick="switchTab('tech')">📜 科技</button>
   <button class="tab-btn" onclick="switchTab('craft')">🍳 加工</button>
+  <button class="tab-btn" onclick="switchTab('cats')">🐱 猫咪</button>
 </div>
 
 <!-- MAIN -->
@@ -752,6 +753,7 @@ body {
   <div id="panel-buildings" class="panel active"></div>
   <div id="panel-tech" class="panel"></div>
   <div id="panel-craft" class="panel"></div>
+  <div id="panel-cats" class="panel"></div>
 </div>
 
 <!-- LOG -->
@@ -772,6 +774,88 @@ body {
 </div>
 
 <script>
+// ============ CAT SYSTEM DATA ============
+// 猫咪名字库（中文）
+const CAT_NAMES = {
+  common: ["肉丸","饭团","味噌","乌龙","抹茶","棉花糖","布丁","奶油","泡芙","年糕","豆腐","丸子","薯条","蛋卷","麻薯"],
+  good: ["蜂蜜","焦糖","太妃糖","栗子","南瓜","红薯","芋头","猕猴桃","芒果"],
+  rare: ["星尘","月光","琥珀","翡翠","珊瑚","珍珠","极光","流星"],
+  legendary: ["阿尔弗雷德","贝奥武夫","芬里尔"]
+};
+
+// 品质定义
+const CAT_QUALITIES = {
+  common:    { name: "普通",     prob: 0.50, initMult: 1.00, xpMult: 1.00, icon: "🐱", color: "#aaa" },
+  good:      { name: "良好",     prob: 0.30, initMult: 1.05, xpMult: 0.95, icon: "🧡", color: "#f0a040" },
+  rare:      { name: "稀有",     prob: 0.15, initMult: 1.15, xpMult: 0.85, icon: "⭐", color: "#c0c0c0" },
+  legendary: { name: "传说",     prob: 0.05, initMult: 1.30, xpMult: 0.75, icon: "👑", color: "#ffd700" }
+};
+
+// XP 每级所需 Lv1~8
+const CAT_XP_TABLE = [0, 50, 150, 350, 700, 1200, 2000, 3500];
+
+// 职业加成
+const CAT_JOB_BONUS = {
+  none:     { name: "待分配", bonus: {} },
+  farmer:   { name: "种田猫", building: "farm",        bonus: { grain: 0.35 } },
+  hunter:   { name: "猎手猫", building: "hunting",     bonus: { meat: 0.50 }, noFuel: true },
+  miner:    { name: "矿工猫", building: "mine",        bonus: { ore: 0.40 } },
+  chef:     { name: "厨艺猫", building: "mushroom_farm", bonus: { mushroom: 0.25 } },
+  shepherd: { name: "羊倌猫", building: "dairy",        bonus: { milk: 0.40 } },
+};
+
+// 猫窝升级花费和上限
+const NESTING_COSTS = [
+  {}, // Lv1初始
+  { grain: 30, meat: 15 },             // Lv2 上限2→4
+  { grain: 60, meat: 30, ore: 15 },    // Lv3 上限4→6
+  { grain: 100, meat: 50, ore: 40, fuel: 20 }, // Lv4 上限6→8
+  { grain: 150, meat: 80, ore: 80, fuel: 50, crystal: 10 }, // Lv5 上限8→10
+];
+const NESTING_CAPS = [2, 4, 6, 8, 10];
+
+// 生成一只猫
+function generateCat(quality = null) {
+  if (!quality) {
+    const r = Math.random();
+    let cumProb = 0;
+    for (const [qid, q] of Object.entries(CAT_QUALITIES)) {
+      cumProb += q.prob;
+      if (r < cumProb) { quality = qid; break; }
+    }
+  }
+  const q = CAT_QUALITIES[quality];
+  const names = CAT_NAMES[quality];
+  return {
+    id: 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name: names[Math.floor(Math.random() * names.length)],
+    quality,
+    level: 1,
+    xp: 0,
+    job: 'none',
+    happiness: 80,
+    assignedTo: null,
+  };
+}
+
+// 猫升级所需XP
+function catXpForLevel(level) {
+  return CAT_XP_TABLE[Math.min(level - 1, CAT_XP_TABLE.length - 1)] || 0;
+}
+
+// 猫当前等级
+function catLevelOf(xp) {
+  for (let i = CAT_XP_TABLE.length - 1; i >= 0; i--) {
+    if (xp >= CAT_XP_TABLE[i]) return i + 1;
+  }
+  return 1;
+}
+
+// 猫等级产出加成
+function catLevelBonus(level) {
+  return 1 + (level - 1) * 0.10;
+}
+
 // ============ GAME CONFIG ============
 // 游戏所有内容数据从此对象读取，代码逻辑不包含任何硬编码的游戏数据
 const CONFIG = {
@@ -1065,8 +1149,6 @@ let G = {
     meat: CONFIG.startState.resources.meat,
     ore: CONFIG.startState.resources.ore,
     fuel: CONFIG.startState.resources.fuel,
-    cat: CONFIG.startState.cats,
-    catCap: CONFIG.startState.catCap,
     mushroom: CONFIG.startState.resources.mushroom,
     crystal: CONFIG.startState.resources.crystal,
     milk: CONFIG.startState.resources.milk,
@@ -1077,7 +1159,9 @@ let G = {
   techs: TECHS.map(t => ({ id: t.id, researched: false, progress: 0 })),
   ticks: 0,
   day: 1,
-  log: []
+  log: [],
+  cats: [],
+  nestingLevel: 1,
 };
 
 // ============ UTILS ============
@@ -1152,7 +1236,8 @@ function showNotif(msg) {
 
 // ============ HAPINESS ============
 function updateHappiness() {
-  const catRatio = G.resources.cat / Math.max(1, G.resources.catCap);
+  const catCap = NESTING_CAPS[Math.min(G.nestingLevel - 1, NESTING_CAPS.length - 1)] || 2;
+  const catRatio = G.cats.length / Math.max(1, catCap);
   const foodProd = calcFoodProduction();
   const foodCons = calcFoodConsumption();
   let h = 50;
@@ -1177,7 +1262,7 @@ function calcFoodProduction() {
 
 function calcFoodConsumption() {
   let c = 0;
-  const cats = G.resources.cat;
+  const cats = G.cats.length;
   c += cats * 0.05;
   for (const b of BUILDINGS) {
     const count = getBState(b.id)?.count || 0;
@@ -1225,27 +1310,74 @@ function doTick() {
 
     // Produce
     for (const [r, amt] of Object.entries(b.produces)) {
-      addRes(r, amt * count * hm);
+      let output = amt * count * hm;
+      // 猫咪职业加成
+      for (const cat of G.cats) {
+        if (cat.assignedTo === b.id) {
+          const job = CAT_JOB_BONUS[cat.job];
+          if (job && job.building === b.id) {
+            for (const [res, bonus] of Object.entries(job.bonus)) {
+              if (res === r) {
+                output = output * (1 + bonus * catLevelBonus(cat.level));
+              }
+            }
+          }
+        }
+      }
+      addRes(r, output);
     }
   }
 
-  // Cat food consumption (passive)
-  const catFood = G.resources.cat * 0.05;
-  setRes('grain', getRes('grain') - catFood);
+  // === 猫咪系统处理 ===
+  const catCap = NESTING_CAPS[Math.min(G.nestingLevel - 1, NESTING_CAPS.length - 1)] || 2;
+  const numCats = G.cats.length;
+
+  // 1. 每只猫消耗谷物 & 被动狩猎产肉
+  const totalCatFood = numCats * 0.05;
+  setRes('grain', getRes('grain') - totalCatFood);
   if (getRes('grain') < 0) {
     setRes('grain', 0);
-    setRes('meat', Math.max(0, getRes('meat') - G.resources.cat * 0.02));
+    setRes('meat', Math.max(0, getRes('meat') - numCats * 0.02));
   }
-
-  // Cats passively gather meat from the dungeon
-  const passiveMeat = G.resources.cat * 0.05 * hm;
+  const passiveMeat = numCats * 0.05 * hm;
   addRes('meat', passiveMeat);
 
-  // Auto-cat growth
-  if (G.resources.cat < G.resources.catCap) {
+  // 2. 猫咪幸福度更新（每10 ticks）
+  if (G.ticks % 10 === 0) {
+    const foodOk = getRes('grain') > 0;
+    for (const cat of G.cats) {
+      let happinessDelta = 0;
+      if (foodOk) happinessDelta += 15;
+      else happinessDelta -= 20;
+      if (cat.assignedTo) happinessDelta += 10;
+      else happinessDelta -= 10;
+      cat.happiness = Math.max(0, Math.min(100, cat.happiness + happinessDelta));
+    }
+  }
+
+  // 3. XP累计（每10 ticks，找有工作的猫）
+  if (G.ticks % 10 === 0) {
+    for (const cat of G.cats) {
+      if (cat.assignedTo) {
+        const happinessMult = 0.5 + (cat.happiness / 100);
+        const baseXP = 0.1;
+        const xpGain = baseXP * happinessMult * CAT_QUALITIES[cat.quality].xpMult;
+        cat.xp += xpGain;
+        const newLevel = catLevelOf(cat.xp);
+        if (newLevel > cat.level) {
+          cat.level = newLevel;
+          addLog(`${CAT_QUALITIES[cat.quality].icon} ${cat.name} 升级了！等级 ${cat.level}`);
+          showNotif(`🐱 ${cat.name} 升级了！`);
+        }
+      }
+    }
+  }
+
+  // 4. 猫咪自动出生
+  if (numCats < catCap) {
     const netFood = calcFoodProduction() - calcFoodConsumption();
     if (netFood > 0.5 && G.ticks % 60 === 0) {
-      addRes('cat', 1);
+      G.cats.push(generateCat());
       addLog('🐱 一只新猫咪加入了你的队伍！');
     }
   }
@@ -1255,7 +1387,7 @@ function doTick() {
     const ts = getTState(t.id);
     if (ts?.researched) continue;
     // Tech auto-researches when you have enough cats
-    const catsWorking = Math.floor(G.resources.cat * 0.5);
+    const catsWorking = Math.floor(G.cats.length * 0.5);
     if (catsWorking > 0 && canAfford(t.cost)) {
       // Slowly drain cost while researching
       if (G.ticks % 30 === 0) {
@@ -1350,11 +1482,11 @@ function renderResources() {
   const hm = happinessMultiplier();
 
   const entries = [
-    { key: 'grain', label: '谷物', rate: calcFoodProduction() - calcFoodConsumption() - G.resources.cat * 0.05 },
+    { key: 'grain', label: '谷物', rate: calcFoodProduction() - calcFoodConsumption() - G.cats.length * 0.05 },
     { key: 'meat', label: '肉', rate: BUILDINGS.filter(b => b.id === 'hunting').reduce((s, b) => s + (b.produces?.meat || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.meat || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'ore', label: '矿石', rate: BUILDINGS.filter(b => b.id === 'mine').reduce((s, b) => s + (b.produces?.ore || 0) * (getBState(b.id)?.count || 0) * hm, 0) },
     { key: 'fuel', label: '燃料', rate: BUILDINGS.filter(b => b.id === 'kiln').reduce((s, b) => s + (b.produces?.fuel || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.fuel || 0) * (getBState(b.id)?.count || 0), 0) },
-    { key: 'cat', label: `猫咪`, rate: 0 },
+    { key: 'cat', label: `猫咪`, rate: 0, catCount: true },
     { key: 'mushroom', label: '烤蘑菇', rate: BUILDINGS.filter(b => b.id === 'mushroom_farm').reduce((s, b) => s + (b.produces?.mushroom || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.mushroom || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'crystal', label: '结晶', rate: BUILDINGS.filter(b => b.id === 'crystal_cave').reduce((s, b) => s + (b.produces?.crystal || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.crystal || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'milk', label: '羊奶', rate: BUILDINGS.filter(b => b.id === 'dairy').reduce((s, b) => s + (b.produces?.milk || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.milk || 0) * (getBState(b.id)?.count || 0), 0) },
@@ -1364,8 +1496,8 @@ function renderResources() {
     const r = getRes(e.key);
     const rateStr = e.rate !== 0 ? fmtRate(e.rate) : '';
     const rateClass = e.rate > 0 ? 'res-rate' : e.rate < 0 ? 'res-rate' : '';
-    const catCap = e.key === 'cat' ? ` / ${G.resources.catCap}` : '';
-    const valStr = e.key === 'cat' ? `${fmt(r)}${catCap}` : fmt(r);
+    const catCap = e.key === 'cat' ? ` / ${NESTING_CAPS[Math.min(G.nestingLevel - 1, NESTING_CAPS.length - 1)] || 2}` : '';
+    const valStr = e.key === 'cat' ? `${fmt(G.cats.length)}${catCap}` : fmt(r);
     const res = getResource(e.key);
     const gatherable = res ? res.manualGather : false;
     const gatherAmount = gatherAmounts[e.key] || 0;
@@ -1480,16 +1612,174 @@ function renderLog() {
   el.innerHTML = G.log.map(l => `<div class="log-entry"><span class="log-time">[${l.time}]</span>${l.msg}</div>`).join('');
 }
 
+// ============ CATS ============
+function renderCats() {
+  const el = document.getElementById('panel-cats');
+  const catCap = NESTING_CAPS[Math.min(G.nestingLevel - 1, NESTING_CAPS.length - 1)] || 2;
+  const numCats = G.cats.length;
+  const atCap = numCats >= catCap;
+  const avgHappiness = numCats > 0 ? Math.round(G.cats.reduce((s, c) => s + c.happiness, 0) / numCats) : 0;
+
+  // Nesting upgrade button
+  const nextNestingCost = NESTING_COSTS[G.nestingLevel];
+  const hasNextCost = nextNestingCost && Object.keys(nextNestingCost).length > 0;
+  const canUpgradeNesting = hasNextCost && canAfford(nextNestingCost) && G.nestingLevel < NESTING_COSTS.length;
+  const nestingCostHtml = hasNextCost
+    ? Object.entries(nextNestingCost).map(([r, amt]) => {
+        const has = getRes(r) >= amt;
+        return `<span class="cost-tag ${has ? '' : 'insufficient'}">${ICONS[r]} ${fmt(amt)}</span>`;
+      }).join('')
+    : '';
+  const nextCap = NESTING_CAPS[G.nestingLevel] || catCap;
+
+  let html = `<div class="panel-title">🐱 猫咪</div>`;
+  html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">`;
+  html += `<div style="font-size:0.9rem;color:var(--ink)">🐱 猫咪数量: <b>${numCats}</b> / ${catCap}</div>`;
+  html += `<div style="font-size:0.8rem;color:var(--ink2)">平均幸福度: ${avgHappiness}%</div>`;
+  if (atCap) {
+    html += `<div style="font-size:0.75rem;color:var(--red);background:rgba(168,68,68,0.1);padding:3px 8px;border-radius:8px">⚠️ 猫窝已满，需要扩建猫窝！</div>`;
+  }
+  html += `</div>`;
+
+  if (hasNextCost) {
+    html += `<div style="margin-bottom:14px;background:var(--bg);border:1.5px solid var(--bg3);border-radius:12px;padding:10px 14px">`;
+    html += `<div style="font-size:0.8rem;margin-bottom:6px">🏠 猫窝 Lv${G.nestingLevel} → Lv${G.nestingLevel + 1}（上限 ${catCap} → ${nextCap}）</div>`;
+    html += `<div style="margin-bottom:8px">${nestingCostHtml}</div>`;
+    html += `<button class="build-btn" onclick="upgradeNesting()" ${canUpgradeNesting ? '' : 'disabled'}>扩建猫窝</button>`;
+    html += `</div>`;
+  } else {
+    html += `<div style="margin-bottom:14px;font-size:0.8rem;color:var(--ink2)">🏠 猫窝已满级（Lv${G.nestingLevel}，上限 ${catCap}）</div>`;
+  }
+
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">`;
+
+  for (const cat of G.cats) {
+    const q = CAT_QUALITIES[cat.quality];
+    const job = CAT_JOB_BONUS[cat.job];
+    const xpForNext = CAT_XP_TABLE[Math.min(cat.level, CAT_XP_TABLE.length - 1)];
+    const xpPrev = CAT_XP_TABLE[Math.max(0, cat.level - 1)] || 0;
+    const xpProgress = cat.level >= CAT_XP_TABLE.length ? 100 : Math.round(((cat.xp - xpPrev) / (xpForNext - xpPrev)) * 100);
+    const happyColor = cat.happiness >= 70 ? '#5a7a4a' : cat.happiness >= 40 ? '#c4713b' : '#a84444';
+    const jobBuilding = cat.assignedTo ? getBuilding(cat.assignedTo) : null;
+
+    html += `<div class="build-card" style="cursor:pointer" onclick="toggleCatDetail('${cat.id}')">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">`;
+    html += `<span style="font-size:1.6rem">${q.icon}</span>`;
+    html += `<div>`;
+    html += `<div style="font-weight:700;font-size:0.95rem;color:${q.color}">${cat.name}</div>`;
+    html += `<div style="font-size:0.68rem;color:var(--ink2)">${q.name} · Lv${cat.level}</div>`;
+    html += `</div>`;
+    html += `<div style="margin-left:auto;text-align:right">`;
+    html += `<div style="font-size:0.7rem;color:${happyColor}">😸 ${cat.happiness}%</div>`;
+    html += `<div style="font-size:0.68rem;color:var(--ink2)">${job.name}</div>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    // XP bar
+    html += `<div style="margin-bottom:6px">`;
+    html += `<div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--ink2);margin-bottom:2px">`;
+    html += `<span>经验</span><span>${Math.floor(cat.xp)} / ${xpForNext}</span>`;
+    html += `</div>`;
+    html += `<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">`;
+    html += `<div style="height:100%;width:${Math.min(100, xpProgress)}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width 0.3s"></div>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    // 工作信息
+    if (jobBuilding) {
+      html += `<div style="font-size:0.68rem;color:var(--green)">🏭 工作中: ${jobBuilding.icon} ${jobBuilding.name}</div>`;
+    } else {
+      html += `<div style="font-size:0.68rem;color:var(--red)">❓ 待分配工作</div>`;
+    }
+
+    // Detail panel (collapsed by default)
+    html += `<div id="cat-detail-${cat.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bg3)">`;
+    html += `<div style="font-size:0.7rem;color:var(--ink2);margin-bottom:6px">分配工作：</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">`;
+    const jobs = Object.entries(CAT_JOB_BONUS).filter(([id]) => id !== 'none');
+    for (const [jid, j] of jobs) {
+      const building = getBuilding(j.building);
+      const isWorkingThis = cat.assignedTo === j.building;
+      const unlocked = isUnlocked(j.building);
+      const hasBuilding = getBState(j.building)?.count > 0;
+      if (!unlocked || !hasBuilding) continue;
+      html += `<button onclick="event.stopPropagation();assignCat('${cat.id}','${jid}')"
+        style="padding:4px 8px;font-size:0.65rem;border:none;border-radius:6px;cursor:pointer;font-family:inherit;
+        background:${isWorkingThis ? 'var(--accent)' : 'var(--bg2)'};color:${isWorkingThis ? '#fff' : 'var(--ink)'};
+        border:1px solid ${isWorkingThis ? 'var(--accent)' : 'var(--bg3)'}">${j.icon} ${j.name}</button>`;
+    }
+    html += `</div>`;
+    if (cat.job !== 'none') {
+      html += `<button onclick="event.stopPropagation();assignCat('${cat.id}','none')" style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--bg3);border-radius:6px;cursor:pointer;font-family:inherit;background:var(--bg);color:var(--ink2);margin-bottom:8px">取消分配</button>`;
+    }
+    html += `<button onclick="event.stopPropagation();releaseCat('${cat.id}')" style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--red);border-radius:6px;cursor:pointer;font-family:inherit;background:rgba(168,68,68,0.08);color:var(--red)">🗑️ 放生</button>`;
+    html += `</div>`;
+
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function toggleCatDetail(catId) {
+  const detail = document.getElementById('cat-detail-' + catId);
+  if (detail) {
+    detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function assignCat(catId, jobId) {
+  const cat = G.cats.find(c => c.id === catId);
+  if (!cat) return;
+  if (jobId === 'none') {
+    cat.job = 'none';
+    cat.assignedTo = null;
+  } else {
+    const job = CAT_JOB_BONUS[jobId];
+    if (!job) return;
+    cat.job = jobId;
+    cat.assignedTo = job.building;
+  }
+  renderCats();
+}
+
+function releaseCat(catId) {
+  if (!confirm('确定要放生这只猫咪吗？')) return;
+  const idx = G.cats.findIndex(c => c.id === catId);
+  if (idx !== -1) {
+    const cat = G.cats[idx];
+    G.cats.splice(idx, 1);
+    addLog(`😿 ${cat.name} 离开了队伍...`);
+    renderCats();
+    renderResources();
+  }
+}
+
+function upgradeNesting() {
+  const nextCost = NESTING_COSTS[G.nestingLevel];
+  if (!nextCost || !canAfford(nextCost)) return;
+  if (G.nestingLevel >= NESTING_COSTS.length) return;
+  spend(nextCost);
+  G.nestingLevel++;
+  addLog(`🏠 猫窝扩建完成！现在是 Lv${G.nestingLevel}，上限 ${NESTING_CAPS[G.nestingLevel - 1]}`);
+  showNotif('猫窝扩建完成！');
+  renderCats();
+  renderResources();
+}
+
 // ============ TABS ============
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabNames = { buildings: '建筑', tech: '科技', craft: '加工', cats: '猫咪' };
   document.querySelectorAll('.tab-btn').forEach(b => {
-    if (b.textContent.includes(name === 'buildings' ? '建筑' : name === 'tech' ? '科技' : '加工')) {
+    if (b.textContent.includes(tabNames[name] || '')) {
       b.classList.add('active');
     }
   });
   document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'cats') renderCats();
 }
 
 // ============ SAVE / LOAD ============
@@ -1500,7 +1790,9 @@ function saveGame() {
     techs: G.techs,
     ticks: G.ticks,
     day: G.day,
-    log: G.log.slice(0, 20)
+    log: G.log.slice(0, 20),
+    cats: G.cats,
+    nestingLevel: G.nestingLevel,
   };
   localStorage.setItem('maomao_save', JSON.stringify(data));
 }
@@ -1516,6 +1808,8 @@ function loadGame() {
     G.ticks = data.ticks || 0;
     G.day = data.day || 1;
     G.log = data.log || [];
+    G.cats = data.cats || [];
+    G.nestingLevel = data.nestingLevel || 1;
     return true;
   } catch (e) {
     return false;
@@ -1529,7 +1823,9 @@ function exportSave() {
     techs: G.techs,
     ticks: G.ticks,
     day: G.day,
-    log: G.log.slice(0, 20)
+    log: G.log.slice(0, 20),
+    cats: G.cats,
+    nestingLevel: G.nestingLevel,
   };
   const str = btoa(encodeURIComponent(JSON.stringify(data)));
   const blob = new Blob([str], { type: 'text/plain' });
@@ -1560,6 +1856,8 @@ function importSave() {
         G.ticks = data.ticks || 0;
         G.day = data.day || 1;
         G.log = data.log || [];
+        G.cats = data.cats || [];
+        G.nestingLevel = data.nestingLevel || 1;
         renderAll();
         saveGame();
         showNotif('存档已导入！');
@@ -1605,6 +1903,13 @@ function startGame() {
     addLog('🐱 欢迎回来！存档已加载。');
     showNotif('存档已加载');
   } else {
+    // 初始化猫窝
+    G.nestingLevel = 1;
+    // 初始化猫咪
+    G.cats = [];
+    for (let i = 0; i < CONFIG.startState.cats; i++) {
+      G.cats.push(generateCat('common'));
+    }
     addLog('🍽️ 迷宫猫国开业了！祝你好运！');
   }
 
