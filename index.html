@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>迷宫�?· 猫国建设�?/title>
+<title>迷宫�?· 猫国建设�?/title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
 
@@ -717,19 +717,19 @@ body {
 <!-- INTRO SCREEN -->
 <div id="intro">
   <div class="intro-art">🍽️🐱�?/div>
-  <h1>迷宫�?· 猫国建设�?/h1>
+  <h1>迷宫�?· 猫国建设�?/h1>
   <p class="subtitle">~ Dungeon Meshi Style Idle Game ~</p>
   <p class="intro-desc">
-    在地下城的深处，你经营着一座奇妙的猫咪食堂�?br>
-    从烤蘑菇和树根开始，建设你的地下城市�?br>
+    在地下城的深处，你经营着一座奇妙的猫咪食堂�?br>
+    从烤蘑菇和树根开始，建设你的地下城市�?br>
     让猫咪们幸福地工作，解锁美味的秘密…�?
   </p>
-  <button class="start-btn" onclick="startGame()">开始冒�?�?/button>
+  <button class="start-btn" onclick="startGame()">开始冒�?�?/button>
 </div>
 
 <!-- HEADER -->
 <div id="header" style="display:none">
-  <h1>🍽�?迷宫猫国</h1>
+  <h1>🍽�?迷宫猫国</h1>
   <div id="happiness-bar">
     <span>😸</span>
     <span id="happiness-text">幸福: 100%</span>
@@ -775,19 +775,19 @@ body {
 
 <script>
 // ============ CAT SYSTEM DATA ============
-// 猫咪名字库（中文�?
+// 猫咪名字库（中文�?
 const CAT_NAMES = {
-  common: ["肉丸","饭团","味噌","乌龙","抹茶","棉花�?,"布丁","奶油","泡芙","年糕","豆腐","丸子","薯条","蛋卷","麻薯"],
-  good: ["蜂蜜","焦糖","太妃�?,"栗子","南瓜","红薯","芋头","猕猴�?,"芒果"],
+  common: ["肉丸","饭团","味噌","乌龙","抹茶","棉花�?,"布丁","奶油","泡芙","年糕","豆腐","丸子","薯条","蛋卷","麻薯"],
+  good: ["蜂蜜","焦糖","太妃�?,"栗子","南瓜","红薯","芋头","猕猴�?,"芒果"],
   rare: ["星尘","月光","琥珀","翡翠","珊瑚","珍珠","极光","流星"],
-  legendary: ["阿尔弗雷�?,"贝奥武夫","芬里�?]
+  legendary: ["阿尔弗雷�?,"贝奥武夫","芬里�?]
 };
 
 // 品质定义
 const CAT_QUALITIES = {
   common:    { name: "普�?,     prob: 0.50, initMult: 1.00, xpMult: 1.00, icon: "🐱", color: "#aaa" },
   good:      { name: "良好",     prob: 0.30, initMult: 1.05, xpMult: 0.95, icon: "🧡", color: "#f0a040" },
-  rare:      { name: "稀�?,     prob: 0.15, initMult: 1.15, xpMult: 0.85, icon: "�?, color: "#c0c0c0" },
+  rare:      { name: "稀�?,     prob: 0.15, initMult: 1.15, xpMult: 0.85, icon: "�?, color: "#c0c0c0" },
   legendary: { name: "传说",     prob: 0.05, initMult: 1.30, xpMult: 0.75, icon: "👑", color: "#ffd700" }
 };
 
@@ -796,21 +796,21 @@ const CAT_XP_TABLE = [0, 50, 150, 350, 700, 1200, 2000, 3500];
 
 // 职业加成
 const CAT_JOB_BONUS = {
-  none:     { name: "待分�?, bonus: {} },
-  farmer:   { name: "种田�?, building: "farm",        bonus: { grain: 0.35 } },
-  hunter:   { name: "猎手�?, building: "hunting",     bonus: { meat: 0.50 }, noFuel: true },
-  miner:    { name: "矿工�?, building: "mine",        bonus: { ore: 0.40 } },
-  chef:     { name: "厨艺�?, building: "mushroom_farm", bonus: { mushroom: 0.25 } },
+  none:     { name: "待分�?, bonus: {} },
+  farmer:   { name: "种田�?, building: "farm",        bonus: { grain: 0.35 } },
+  hunter:   { name: "猎手�?, building: "hunting",     bonus: { meat: 0.50 }, noFuel: true },
+  miner:    { name: "矿工�?, building: "mine",        bonus: { ore: 0.40 } },
+  chef:     { name: "厨艺�?, building: "mushroom_farm", bonus: { mushroom: 0.25 } },
   shepherd: { name: "羊倌猫", building: "dairy",        bonus: { milk: 0.40 } },
 };
 
-// 猫窝升级花费和上�?
+// 猫窝升级花费和上�?
 const NESTING_COSTS = [
   {}, // Lv1初始
-  { grain: 30, meat: 15 },             // Lv2 上限2�?
-  { grain: 60, meat: 30, ore: 15 },    // Lv3 上限4�?
-  { grain: 100, meat: 50, ore: 40, fuel: 20 }, // Lv4 上限6�?
-  { grain: 150, meat: 80, ore: 80, fuel: 50, crystal: 10 }, // Lv5 上限8�?0
+  { grain: 30, meat: 15 },             // Lv2 上限2�?
+  { grain: 60, meat: 30, ore: 15 },    // Lv3 上限4�?
+  { grain: 100, meat: 50, ore: 40, fuel: 20 }, // Lv4 上限6�?
+  { grain: 150, meat: 80, ore: 80, fuel: 50, crystal: 10 }, // Lv5 上限8�?0
 ];
 const NESTING_CAPS = [2, 4, 6, 8, 10];
 
@@ -843,7 +843,7 @@ function catXpForLevel(level) {
   return CAT_XP_TABLE[Math.min(level - 1, CAT_XP_TABLE.length - 1)] || 0;
 }
 
-// 猫当前等�?
+// 猫当前等�?
 function catLevelOf(xp) {
   for (let i = CAT_XP_TABLE.length - 1; i >= 0; i--) {
     if (xp >= CAT_XP_TABLE[i]) return i + 1;
@@ -851,16 +851,16 @@ function catLevelOf(xp) {
   return 1;
 }
 
-// 猫等级产出加�?
+// 猫等级产出加�?
 function catLevelBonus(level) {
   return 1 + (level - 1) * 0.10;
 }
 
 // ============ GAME CONFIG ============
-// 游戏所有内容数据从此对象读取，代码逻辑不包含任何硬编码的游戏数�?
+// 游戏所有内容数据从此对象读取，代码逻辑不包含任何硬编码的游戏数�?
 const CONFIG = {
   meta: {
-    version: "1.2",
+    version: "1.3",
     gameName: "迷宫饭·猫国建设�?
   },
 
@@ -881,10 +881,10 @@ const CONFIG = {
 
   resources: [
     { id: "grain",    name: "谷物",    icon: "🌾", manualGather: true,  gatherAmount: 2, initialAmount: 20 },
-    { id: "meat",     name: "�?,      icon: "🍖", manualGather: false, gatherAmount: 0, initialAmount: 5  },
+    { id: "meat",     name: "�?,      icon: "🍖", manualGather: false, gatherAmount: 0, initialAmount: 5  },
     { id: "ore",      name: "矿石",    icon: "🪨", manualGather: false, gatherAmount: 0, initialAmount: 0  },
     { id: "fuel",     name: "燃料",    icon: "🔥", manualGather: false, gatherAmount: 0, initialAmount: 0  },
-    { id: "mushroom", name: "烤蘑�?,  icon: "🍄", manualGather: false, gatherAmount: 0, initialAmount: 0  },
+    { id: "mushroom", name: "烤蘑�?,  icon: "🍄", manualGather: false, gatherAmount: 0, initialAmount: 0  },
     { id: "crystal",  name: "结晶",    icon: "💎", manualGather: false, gatherAmount: 0, initialAmount: 0  },
     { id: "milk",     name: "羊奶",    icon: "🥛", manualGather: false, gatherAmount: 0, initialAmount: 0  },
   ],
@@ -894,7 +894,7 @@ const CONFIG = {
 function getResource(id) { return CONFIG.resources.find(r => r.id === id); }
 
 // ============ GAME DATA ============
-// �?CONFIG.resources 构建 ICONS �?RESOURCE_NAMES
+// �?CONFIG.resources 构建 ICONS �?RESOURCE_NAMES
 const ICONS = {};
 const RESOURCE_NAMES = {};
 for (const r of CONFIG.resources) {
@@ -905,7 +905,7 @@ for (const r of CONFIG.resources) {
 ICONS['cat'] = '🐱';
 RESOURCE_NAMES['cat'] = '猫咪';
 
-// gatherAmounts �?CONFIG 读取
+// gatherAmounts �?CONFIG 读取
 const gatherAmounts = {};
 for (const r of CONFIG.resources) {
   gatherAmounts[r.id] = r.gatherAmount;
@@ -917,8 +917,8 @@ const BUILDINGS = [
     id: 'farm',
     name: '田野食堂',
     icon: '🌾',
-    desc: '种植谷物和香草的大食堂后�?,
-    effect: '+0.5 谷物/�?,
+    desc: '种植谷物和香草的大食堂后�?,
+    effect: '+0.5 谷物/�?,
     cost: { grain: 10 },
     baseCost: { grain: 10 },
     count: 0,
@@ -930,10 +930,10 @@ const BUILDINGS = [
   },
   {
     id: 'hunting',
-    name: '狩猎队营�?,
+    name: '狩猎队营�?,
     icon: '🎯',
-    desc: '地下城狩猎队驻扎地，捕捉美味的怪物�?,
-    effect: '+0.4 �?�?,
+    desc: '地下城狩猎队驻扎地，捕捉美味的怪物�?,
+    effect: '+0.4 �?�?,
     cost: { grain: 15 },
     baseCost: { grain: 15 },
     count: 0,
@@ -948,7 +948,7 @@ const BUILDINGS = [
     name: '矿石精炼所',
     icon: '⛏️',
     desc: '挖掘并精炼珍贵矿石的地下工坊',
-    effect: '+0.2 矿石/�?,
+    effect: '+0.2 矿石/�?,
     cost: { grain: 20, meat: 10 },
     baseCost: { grain: 20, meat: 10 },
     count: 0,
@@ -960,10 +960,10 @@ const BUILDINGS = [
   },
   {
     id: 'kiln',
-    name: '巨型炊事�?,
+    name: '巨型炊事�?,
     icon: '🍲',
-    desc: '燃烧燃料产生热能的大型灶�?,
-    effect: '+0.4 燃料/�?,
+    desc: '燃烧燃料产生热能的大型灶�?,
+    effect: '+0.4 燃料/�?,
     cost: { ore: 10, grain: 10 },
     baseCost: { ore: 10, grain: 10 },
     count: 0,
@@ -976,7 +976,7 @@ const BUILDINGS = [
   {
     id: 'nest',
     name: '温暖猫窝',
-    icon: '🛏�?,
+    icon: '🛏�?,
     desc: '给猫咪们休息的舒适小窝，增加猫咪上限',
     effect: '+2 猫咪上限',
     cost: { grain: 30, meat: 10 },
@@ -994,7 +994,7 @@ const BUILDINGS = [
     name: '烤蘑菇窖',
     icon: '🍄',
     desc: '培育珍贵烤蘑菇的温暖地窖',
-    effect: '+0.6 烤蘑�?�?,
+    effect: '+0.6 烤蘑�?�?,
     cost: { ore: 15, fuel: 5 },
     baseCost: { ore: 15, fuel: 5 },
     count: 0,
@@ -1008,8 +1008,8 @@ const BUILDINGS = [
     id: 'crystal_cave',
     name: '结晶洞窟',
     icon: '💎',
-    desc: '生成神秘结晶的魔法洞�?,
-    effect: '+0.15 结晶/�?,
+    desc: '生成神秘结晶的魔法洞�?,
+    effect: '+0.15 结晶/�?,
     cost: { ore: 30, fuel: 15 },
     baseCost: { ore: 30, fuel: 15 },
     count: 0,
@@ -1024,7 +1024,7 @@ const BUILDINGS = [
     name: '山羊牧场',
     icon: '🐐',
     desc: '饲养提供羊奶的地下山羊群',
-    effect: '+0.4 羊奶/�?,
+    effect: '+0.4 羊奶/�?,
     cost: { grain: 25, meat: 15 },
     baseCost: { grain: 25, meat: 15 },
     count: 0,
@@ -1040,7 +1040,7 @@ const BUILDINGS = [
 const TECHS = [
   {
     id: 'animal',
-    name: '畜牧�?,
+    name: '畜牧�?,
     icon: '🐾',
     desc: '了解动物习性，建立狩猎队和牧场',
     cost: { grain: 20 },
@@ -1049,16 +1049,16 @@ const TECHS = [
   },
   {
     id: 'metal',
-    name: '冶金�?,
+    name: '冶金�?,
     icon: '⚒️',
-    desc: '开采并提炼矿石，掌握金属加�?,
+    desc: '开采并提炼矿石，掌握金属加�?,
     cost: { grain: 30, meat: 10 },
     researched: false,
     unlocks: ['mine']
   },
   {
     id: 'energy',
-    name: '能源�?,
+    name: '能源�?,
     icon: '🔥',
     desc: '利用燃料产生能量，驱动地下城设施',
     cost: { ore: 20, grain: 15 },
@@ -1069,15 +1069,15 @@ const TECHS = [
     id: 'mushroom',
     name: '真菌培育',
     icon: '🍄',
-    desc: '在地底温暖环境培育食用蘑�?,
+    desc: '在地底温暖环境培育食用蘑�?,
     cost: { ore: 15, meat: 15 },
     researched: false,
     unlocks: ['mushroom_farm']
   },
   {
     id: 'magic',
-    name: '魔法�?,
-    icon: '�?,
+    name: '魔法�?,
+    icon: '�?,
     desc: '解锁结晶矿脉的奥秘，进入魔法时代',
     cost: { ore: 40, mushroom: 20, fuel: 10 },
     researched: false,
@@ -1095,13 +1095,13 @@ const CRAFTS = [
 // ============ RESOURCE GUIDE ============
 // Maps each resource to the building that produces it
 const RESOURCE_GUIDE = {
-  grain:    { building: 'farm',        tip: '猫咪会帮你种谷物，建造田野食堂自动产�? },
-  meat:     { building: null,           tip: '猫咪会自己去地下城狩猎，被动获得�? },
-  ore:      { building: 'mine',        tip: '建造矿石精炼所挖掘矿石，需要先研究冶金�? },
-  fuel:     { building: 'kiln',        tip: '建造巨型炊事锅燃烧燃料，需要先研究能源�? },
+  grain:    { building: 'farm',        tip: '猫咪会帮你种谷物，建造田野食堂自动产�? },
+  meat:     { building: null,           tip: '猫咪会自己去地下城狩猎，被动获得�? },
+  ore:      { building: 'mine',        tip: '建造矿石精炼所挖掘矿石，需要先研究冶金�? },
+  fuel:     { building: 'kiln',        tip: '建造巨型炊事锅燃烧燃料，需要先研究能源�? },
   mushroom: { building: 'mushroom_farm', tip: '建造烤蘑菇窖培育蘑菇，需要先研究真菌培育' },
-  crystal:  { building: 'crystal_cave', tip: '建造结晶洞窟生成结晶，需要先研究魔法�? },
-  milk:     { building: 'dairy',       tip: '建造山羊牧场获取羊奶，需要先研究畜牧�? },
+  crystal:  { building: 'crystal_cave', tip: '建造结晶洞窟生成结晶，需要先研究魔法�? },
+  milk:     { building: 'dairy',       tip: '建造山羊牧场获取羊奶，需要先研究畜牧�? },
 };
 
 function showResourceGuide(cost) {
@@ -1110,11 +1110,11 @@ function showResourceGuide(cost) {
     if (getRes(r) < needed) {
       const guide = RESOURCE_GUIDE[r];
       let tip = guide ? guide.tip : `${RESOURCE_NAMES[r] || r}不足`;
-      if (r === 'meat') tip = '猫咪会自动狩猎，每秒获得少量�?;
+      if (r === 'meat') tip = '猫咪会自动狩猎，每秒获得少量�?;
 
       // Show guide tip
       const tipEl = document.getElementById('guide-tip');
-      tipEl.innerHTML = `<span class="guide-resource">${ICONS[r]} �?{RESOURCE_NAMES[r] || r}</span><br>${tip}`;
+      tipEl.innerHTML = `<span class="guide-resource">${ICONS[r]} �?{RESOURCE_NAMES[r] || r}</span><br>${tip}`;
       tipEl.classList.add('show');
       setTimeout(() => tipEl.classList.remove('show'), 4000);
 
@@ -1332,7 +1332,7 @@ function doTick() {
   const catCap = NESTING_CAPS[Math.min(G.nestingLevel - 1, NESTING_CAPS.length - 1)] || 2;
   const numCats = G.cats.length;
 
-  // 1. 每只猫消耗谷�?& 被动狩猎产肉
+  // 1. 每只猫消耗谷�?& 被动狩猎产肉
   const totalCatFood = numCats * 0.05;
   setRes('grain', getRes('grain') - totalCatFood);
   if (getRes('grain') < 0) {
@@ -1342,7 +1342,7 @@ function doTick() {
   const passiveMeat = numCats * 0.05 * hm;
   addRes('meat', passiveMeat);
 
-  // 2. 猫咪幸福度更新（�?0 ticks�?
+  // 2. 猫咪幸福度更新（�?0 ticks�?
   if (G.ticks % 10 === 0) {
     const foodOk = getRes('grain') > 0;
     for (const cat of G.cats) {
@@ -1392,12 +1392,12 @@ function doTick() {
       // Slowly drain cost while researching
       if (G.ticks % 30 === 0) {
         spend(t.cost);
-        addLog(`📜 正在研究�?{t.name}」…`);
+        addLog(`📜 正在研究�?{t.name}」…`);
       }
       if (G.ticks % 120 === 0) {
         ts.researched = true;
-        addLog(`�?解锁科技：�?{t.name}」！`);
-        showNotif(`�?解锁 ${t.name}`);
+        addLog(`�?解锁科技：�?{t.name}」！`);
+        showNotif(`�?解锁 ${t.name}`);
       }
     }
   }
@@ -1427,7 +1427,7 @@ function buyBuilding(id) {
   addRes('cat', b.catCost);
   addRes('catCap', b.increasesCatCap || 0);
 
-  addLog(`🏠 建造了�?{b.name}」�?`);
+  addLog(`🏠 建造了�?{b.name}」�?`);
   showNotif(`建�? ${b.name}`);
   renderBuildings();
   renderResources();
@@ -1469,7 +1469,7 @@ function startTechResearch(id) {
 
   spend(t.cost);
   ts.researched = true;
-  addLog(`�?科技研究完成：�?{t.name}」！`);
+  addLog(`�?科技研究完成：�?{t.name}」！`);
   showNotif(`解锁: ${t.name}`);
   renderTech();
   renderBuildings();
@@ -1482,11 +1482,11 @@ function renderResources() {
 
   const entries = [
     { key: 'grain', label: '谷物', rate: calcFoodProduction() - calcFoodConsumption() - G.cats.length * 0.05 },
-    { key: 'meat', label: '�?, rate: BUILDINGS.filter(b => b.id === 'hunting').reduce((s, b) => s + (b.produces?.meat || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.meat || 0) * (getBState(b.id)?.count || 0), 0) },
+    { key: 'meat', label: '�?, rate: BUILDINGS.filter(b => b.id === 'hunting').reduce((s, b) => s + (b.produces?.meat || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.meat || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'ore', label: '矿石', rate: BUILDINGS.filter(b => b.id === 'mine').reduce((s, b) => s + (b.produces?.ore || 0) * (getBState(b.id)?.count || 0) * hm, 0) },
     { key: 'fuel', label: '燃料', rate: BUILDINGS.filter(b => b.id === 'kiln').reduce((s, b) => s + (b.produces?.fuel || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.fuel || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'cat', label: `猫咪`, rate: 0, catCount: true },
-    { key: 'mushroom', label: '烤蘑�?, rate: BUILDINGS.filter(b => b.id === 'mushroom_farm').reduce((s, b) => s + (b.produces?.mushroom || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.mushroom || 0) * (getBState(b.id)?.count || 0), 0) },
+    { key: 'mushroom', label: '烤蘑�?, rate: BUILDINGS.filter(b => b.id === 'mushroom_farm').reduce((s, b) => s + (b.produces?.mushroom || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.mushroom || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'crystal', label: '结晶', rate: BUILDINGS.filter(b => b.id === 'crystal_cave').reduce((s, b) => s + (b.produces?.crystal || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.crystal || 0) * (getBState(b.id)?.count || 0), 0) },
     { key: 'milk', label: '羊奶', rate: BUILDINGS.filter(b => b.id === 'dairy').reduce((s, b) => s + (b.produces?.milk || 0) * (getBState(b.id)?.count || 0) * hm, 0) - BUILDINGS.reduce((s, b) => s + (b.consumes?.milk || 0) * (getBState(b.id)?.count || 0), 0) },
   ];
@@ -1502,7 +1502,7 @@ function renderResources() {
     const gatherAmount = gatherAmounts[e.key] || 0;
     return `<div class="res-card ${gatherable ? 'can-gather' : ''}" onclick="${gatherable ? `gather('${e.key}')` : ''}" style="position:relative">
       ${gatherable ? `<button class="gather-btn" onclick="event.stopPropagation();gather('${e.key}')">+${gatherAmount}</button>` : ''}
-      <span class="res-icon">${ICONS[e.key] || '?'}</span>
+      <span class="res-icon">${res ? res.icon : '?'}</span>
       <div class="res-info">
         <span class="res-name">${e.label}</span>
         <span class="res-val">${valStr}</span>
@@ -1528,7 +1528,7 @@ function renderBuildings() {
       const cost = getBuildingCost(b, count);
       const affordable = canAfford(cost);
       const locked = !unlocked;
-      const lockedHint = locked ? `需要先研究�?{getTech(b.techRequired)?.name}」` : '';
+      const lockedHint = locked ? `需要先研究�?{getTech(b.techRequired)?.name}」` : '';
 
       const costHtml = Object.entries(cost).map(([r, amt]) => {
         const has = getRes(r) >= amt;
@@ -1545,7 +1545,7 @@ function renderBuildings() {
         <div class="build-effect">${b.effect}</div>
         <div class="build-cost">${costHtml}</div>
         <button class="build-btn" onclick="buyBuilding('${b.id}')" ${(!affordable || locked) ? 'disabled' : ''}>
-          ${locked ? '🔒 ' + lockedHint : '����' : '建�?}
+          ${locked ? '🔒 ' + lockedHint : '����' : '建�?}
         </button>
       </div>`;
     }).join('') + '</div>';
@@ -1559,7 +1559,7 @@ function renderTech() {
       const researched = ts?.researched;
       const affordable = canAfford(t.cost);
       const status = researched ? 'done' : affordable ? 'doing' : 'need';
-      const statusText = researched ? '已研�? : affordable ? '可研�? : '需求不�?;
+      const statusText = researched ? '已研�? : affordable ? '可研�? : '需求不�?;
 
       const costHtml = Object.entries(t.cost).map(([r, amt]) => {
         const has = getRes(r) >= amt;
@@ -1571,7 +1571,7 @@ function renderTech() {
         <div class="tech-info">
           <div class="tech-name">${t.name}</div>
           <div class="tech-desc">${t.desc}</div>
-          <div style="margin-top:4px;font-size:0.68rem;color:var(--ink2)">解锁: ${t.unlocks.map(u => getBuilding(u)?.name || u).join('�?)}</div>
+          <div style="margin-top:4px;font-size:0.68rem;color:var(--ink2)">解锁: ${t.unlocks.map(u => getBuilding(u)?.name || u).join('�?)}</div>
           <div class="build-cost" style="margin-top:4px">${costHtml}</div>
         </div>
         <div>
@@ -1584,7 +1584,7 @@ function renderTech() {
 
 function renderCraft() {
   const el = document.getElementById('panel-craft');
-  el.innerHTML = `<div class="panel-title">🍳 加工�?/div><div class="craft-grid">` +
+  el.innerHTML = `<div class="panel-title">🍳 加工�?/div><div class="craft-grid">` +
     CRAFTS.map(c => {
       const affordable = canAfford(c.cost);
       const costHtml = Object.entries(c.cost).map(([r, amt]) => {
@@ -1594,7 +1594,7 @@ function renderCraft() {
 
       let effectText = '';
       if (c.result === 'happiness') effectText = `+${c.amount} 幸福度`;
-      if (c.converts) effectText = `�?${ICONS[c.result]} +${c.amount}`;
+      if (c.converts) effectText = `�?${ICONS[c.result]} +${c.amount}`;
 
       return `<div class="craft-card">
         <div class="craft-icon">${c.icon}</div>
@@ -1634,7 +1634,7 @@ function renderCats() {
   let html = `<div class="panel-title">🐱 猫咪</div>`;
   html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">`;
   html += `<div style="font-size:0.9rem;color:var(--ink)">🐱 猫咪数量: <b>${numCats}</b> / ${catCap}</div>`;
-  html += `<div style="font-size:0.8rem;color:var(--ink2)">平均幸福�? ${avgHappiness}%</div>`;
+  html += `<div style="font-size:0.8rem;color:var(--ink2)">平均幸福�? ${avgHappiness}%</div>`;
   if (atCap) {
     html += `<div style="font-size:0.75rem;color:var(--red);background:rgba(168,68,68,0.1);padding:3px 8px;border-radius:8px">⚠️ 猫窝已满，需要扩建猫窝！</div>`;
   }
@@ -1642,12 +1642,12 @@ function renderCats() {
 
   if (hasNextCost) {
     html += `<div style="margin-bottom:14px;background:var(--bg);border:1.5px solid var(--bg3);border-radius:12px;padding:10px 14px">`;
-    html += `<div style="font-size:0.8rem;margin-bottom:6px">🏠 猫窝 Lv${G.nestingLevel} �?Lv${G.nestingLevel + 1}（上�?${catCap} �?${nextCap}�?/div>`;
+    html += `<div style="font-size:0.8rem;margin-bottom:6px">🏠 猫窝 Lv${G.nestingLevel} �?Lv${G.nestingLevel + 1}（上�?${catCap} �?${nextCap}�?/div>`;
     html += `<div style="margin-bottom:8px">${nestingCostHtml}</div>`;
     html += `<button class="build-btn" onclick="upgradeNesting()" ${canUpgradeNesting ? '' : 'disabled'}>扩建猫窝</button>`;
     html += `</div>`;
   } else {
-    html += `<div style="margin-bottom:14px;font-size:0.8rem;color:var(--ink2)">🏠 猫窝已满级（Lv${G.nestingLevel}，上�?${catCap}�?/div>`;
+    html += `<div style="margin-bottom:14px;font-size:0.8rem;color:var(--ink2)">🏠 猫窝已满级（Lv${G.nestingLevel}，上�?${catCap}�?/div>`;
   }
 
   html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">`;
@@ -1686,14 +1686,14 @@ function renderCats() {
 
     // 工作信息
     if (jobBuilding) {
-      html += `<div style="font-size:0.68rem;color:var(--green)">🏭 工作�? ${jobBuilding.icon} ${jobBuilding.name}</div>`;
+      html += `<div style="font-size:0.68rem;color:var(--green)">🏭 工作�? ${jobBuilding.icon} ${jobBuilding.name}</div>`;
     } else {
-      html += `<div style="font-size:0.68rem;color:var(--red)">�?待分配工�?/div>`;
+      html += `<div style="font-size:0.68rem;color:var(--red)">�?待分配工�?/div>`;
     }
 
     // Detail panel (collapsed by default)
     html += `<div id="cat-detail-${cat.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bg3)">`;
-    html += `<div style="font-size:0.7rem;color:var(--ink2);margin-bottom:6px">分配工作�?/div>`;
+    html += `<div style="font-size:0.7rem;color:var(--ink2);margin-bottom:6px">分配工作�?/div>`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">`;
     const jobs = Object.entries(CAT_JOB_BONUS).filter(([id]) => id !== 'none');
     for (const [jid, j] of jobs) {
@@ -1711,7 +1711,7 @@ function renderCats() {
     if (cat.job !== 'none') {
       html += `<button onclick="event.stopPropagation();assignCat('${cat.id}','none')" style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--bg3);border-radius:6px;cursor:pointer;font-family:inherit;background:var(--bg);color:var(--ink2);margin-bottom:8px">取消分配</button>`;
     }
-    html += `<button onclick="event.stopPropagation();releaseCat('${cat.id}')" style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--red);border-radius:6px;cursor:pointer;font-family:inherit;background:rgba(168,68,68,0.08);color:var(--red)">🗑�?放生</button>`;
+    html += `<button onclick="event.stopPropagation();releaseCat('${cat.id}')" style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--red);border-radius:6px;cursor:pointer;font-family:inherit;background:rgba(168,68,68,0.08);color:var(--red)">🗑�?放生</button>`;
     html += `</div>`;
 
     html += `</div>`;
@@ -1744,12 +1744,12 @@ function assignCat(catId, jobId) {
 }
 
 function releaseCat(catId) {
-  if (!confirm('确定要放生这只猫咪吗�?)) return;
+  if (!confirm('确定要放生这只猫咪吗�?)) return;
   const idx = G.cats.findIndex(c => c.id === catId);
   if (idx !== -1) {
     const cat = G.cats[idx];
     G.cats.splice(idx, 1);
-    addLog(`😿 ${cat.name} 离开了队�?..`);
+    addLog(`😿 ${cat.name} 离开了队�?..`);
     renderCats();
     renderResources();
   }
@@ -1761,8 +1761,8 @@ function upgradeNesting() {
   if (G.nestingLevel >= NESTING_COSTS.length) return;
   spend(nextCost);
   G.nestingLevel++;
-  addLog(`🏠 猫窝扩建完成！现在是 Lv${G.nestingLevel}，上�?${NESTING_CAPS[G.nestingLevel - 1]}`);
-  showNotif('猫窝扩建完成�?);
+  addLog(`🏠 猫窝扩建完成！现在是 Lv${G.nestingLevel}，上�?${NESTING_CAPS[G.nestingLevel - 1]}`);
+  showNotif('猫窝扩建完成�?);
   renderCats();
   renderResources();
 }
@@ -1861,7 +1861,7 @@ function importSave() {
         saveGame();
         showNotif('存档已导入！');
       } catch (e) {
-        showNotif('存档格式错误�?);
+        showNotif('存档格式错误�?);
       }
     };
     reader.readAsText(file);
@@ -1870,7 +1870,7 @@ function importSave() {
 }
 
 function resetGame() {
-  if (!confirm('确定要重置游戏吗？所有进度将丢失�?)) return;
+  if (!confirm('确定要重置游戏吗？所有进度将丢失�?)) return;
   localStorage.removeItem('maomao_save');
   location.reload();
 }
@@ -1899,12 +1899,12 @@ function startGame() {
 
   const loaded = loadGame();
   if (loaded) {
-    addLog('🐱 欢迎回来！存档已加载�?);
-    showNotif('存档已加�?);
+    addLog('🐱 欢迎回来！存档已加载�?);
+    showNotif('存档已加�?);
   } else {
-    // 初始化猫�?
+    // 初始化猫�?
     G.nestingLevel = 1;
-    // 初始化猫�?
+    // 初始化猫�?
     G.cats = [];
     for (let i = 0; i < CONFIG.startState.cats; i++) {
       G.cats.push(generateCat('common'));
@@ -1912,7 +1912,7 @@ function startGame() {
     // 开局免费赠送一个田野食堂，保证谷物供给
     const farmState = G.buildings.find(b => b.id === 'farm');
     if (farmState) farmState.count = 1;
-    addLog('🍽�?迷宫猫国开业了！祝你好运！');
+    addLog('🍽�?迷宫猫国开业了！祝你好运！');
   }
 
   renderAll();
